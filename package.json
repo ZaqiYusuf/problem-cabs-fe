@@ -4,9 +4,9 @@
   "private": true,
   "dependencies": {
     "6": "^0.0.1",
-    "@ckeditor/ckeditor5-build-classic": "^41.4.2",
+    "@ckeditor/ckeditor5-build-classic": "^43.3.1",
     "@ckeditor/ckeditor5-editor-balloon": "^41.0.0",
-    "@ckeditor/ckeditor5-react": "^6.3.0",
+    "@ckeditor/ckeditor5-react": "^9.3.1",
     "@flaticon/flaticon-uicons": "^3.3.1",
     "@fullcalendar/core": "^6.1.10",
     "@fullcalendar/daygrid": "^6.1.10",
