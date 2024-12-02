@@ -2,6 +2,10 @@
 import React, { useCallback, useMemo, useState, useEffect } from "react";
 import TableContainer from "Common/TableContainer";
 
+import { getEntryPermits, updateEntryPermits, postEntryPermits, deleteEntryPermits } from "helpers/backend_helper";
+
+
+
 // Icons
 import {
   Search,
@@ -61,13 +65,15 @@ interface ProcessIMK {
   imk_number: string;
   document_number: string;
   registration_date: string; // ISO date string
-  customer: string;
+  customer_id: string;
   tenant_id: string;
   total_cost: string | null;
   item: string;
+
   status_imk: boolean;
   status_sticker: boolean;
   stickerPrinted?: boolean; // Added to track sticker print status
+  
   permitted: PermittedVehicle[];
   personnels: Personnel[];
 }
@@ -76,64 +82,64 @@ const ProcessListView = () => {
   const navigate = useNavigate();
 
   // Dummy Data
-  const [processes, setProcesses] = useState<ProcessIMK[]>([
-    {
-      id: 1,
-      imk_number: "IMK 001/KIE/X/2024",
-      document_number: "153/ICP-PKT/v/2024",
-      registration_date: "2023-01-15",
-      customer: "PT. Angkasa Pura I",
-      tenant_id: "PKT",
-      total_cost: "15000",
-      item: "Item Description",
-      status_imk: true,
-      status_sticker: true,
-      stickerPrinted: false,
-      permitted: [
-        {
-          id: 1,
-          package_id: 101,
-          plate_number: "B 1234 ABC",
-          no_lambung: "NL-5678",
-          stnk: "path/to/stnk1.pdf",
-          driver_name: "John Doe",
-          sim: "path/to/sim1.pdf",
-          number_stiker: 1,
-          location_id: 201,
-          cargo: "Cargo Type",
-          origin: "Origin Location",
-          start_date: "2023-01-16",
-          expired_at: "2024-01-15",
-          total_cost: "5000",
-          notes: "Handle with care",
-        },
-      ],
-      personnels: [
-        {
-          id: 1,
-          name: "Jane Smith",
-          identity_number: "1234567890",
-          location_id: 301,
-          package_id: 401,
-          notes: "Experienced driver",
-        },
-      ],
-    },
-    {
-      id: 2,
-      imk_number: "IMK 002/KIE/X/2024",
-      document_number: "153/ICP-PKT/v/2024",
-      registration_date: "2023-02-20",
-      customer: "PT. Angkasa Pura II",
-      tenant_id: "KMI",
-      total_cost: null,
-      item: "Another Item",
-      status_imk: false,
-      status_sticker: false,
-      permitted: [],
-      personnels: [],
-    },
-  ]);
+  const [processes, setProcesses] = useState<ProcessIMK[]>([]);
+  
+  const [filteredProcess, setFilteredProcess] = useState<ProcessIMK[]>(processes);
+
+
+
+  const getCustomer = async () => {
+    try {
+      const response: any = await getEntryPermits();
+      console.log("Respons dari API:", response);
+
+      if (Array.isArray(response.process_imks)) {
+        const mappedProcess = response.process_imks.map((item: any) => ({
+          id: item.id,
+          imk_number: item.imk_number,
+          document_number: item.document_number,
+          registration_date: item.registration_date,
+          customer_id: item.customer.name_customer,
+          tenant_id: item.tenant_id,
+          total_cost: item.total_cost || null,
+          item: item.item || "",
+          status_imk: item.status_imk,
+          status_sticker: true,
+          stickerPrinted: true,
+          permitted: item.vehicles || [],
+          personnels: item.personnels || [],
+        }));
+
+        console.log("Data yang sudah dipetakan:", mappedProcess);
+        setProcesses(mappedProcess);
+        setFilteredProcess(mappedProcess);
+      } else {
+        console.error("process_imks bukan array:", response.process_imks);
+        setProcesses([]);
+        setFilteredProcess([]);
+      }
+    } catch (error) {
+      console.error("Error saat memuat data:", error);
+      setProcesses([]);
+      setFilteredProcess([]);
+    }
+  }
+
+    // const [isEdit, setIsEdit] = useState<boolean>(false);
+    const deleteSettings = async (data: any) => {
+      await deleteEntryPermits(data.id).then(() => {
+        getCustomer();
+      });
+    };
+    
+
+
+  useEffect(() => {
+    getCustomer()
+  }, []);
+
+
+
 
   const [filteredProcesses, setFilteredProcesses] =
     useState<ProcessIMK[]>(processes);
@@ -150,6 +156,9 @@ const ProcessListView = () => {
 
   const deleteToggle = useCallback(() => setDeleteModal((prev) => !prev), []);
 
+
+
+
   // Handle Delete
   const handleDelete = useCallback(() => {
     if (eventData) {
@@ -159,6 +168,7 @@ const ProcessListView = () => {
       setFilteredProcesses((prevFiltered) =>
         prevFiltered.filter((proc) => proc.id !== eventData.id)
       );
+      deleteSettings(eventData)
       toast.success("Proses IMK berhasil dihapus!");
       setDeleteModal(false);
     }
@@ -196,89 +206,75 @@ const ProcessListView = () => {
   const handlePDFClick = useCallback(
     (proc: ProcessIMK) => {
       const doc = new jsPDF();
-
-      // Constants for layout
       const pageWidth = doc.internal.pageSize.getWidth();
-      const margin = 15;
+      const margin = 10;
       const lineHeight = 7;
       let currentY = margin;
-
+  
       // Title
-      doc.setFontSize(14);
-      doc.text("IZIN MASUK KAWASAN KIE", pageWidth / 2, currentY, {
-        align: "center",
-      });
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text("IZIN MASUK KAWASAN KIE", pageWidth / 2, currentY, { align: "center" });
       currentY += lineHeight * 2;
-
+  
       // Details Section
       doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
       doc.text(`Nomor Register: ${proc.imk_number}`, margin, currentY);
-      doc.text(
-        `Perusahaan Yang Mengajukan: ${proc.customer}`,
-        margin,
-        currentY + lineHeight
-      );
-      doc.text(
-        `Status: ${proc.status_imk ? "Active" : "Non Tenant"}`,
-        margin,
-        currentY + lineHeight * 2
-      );
+      doc.text(`Perusahaan Yang Mengajukan: ${proc.customer_id}`, margin, currentY + lineHeight);
+      doc.text(`Status: ${proc.status_imk ? "Active" : "Non Tenant"}`, margin, currentY + lineHeight * 2);
       doc.text(
         `Total Biaya: ${
           proc.total_cost
-            ? new Intl.NumberFormat("id-ID", {
-                style: "currency",
-                currency: "IDR",
-                minimumFractionDigits: 0,
-              }).format(Number(proc.total_cost))
+            ? new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(Number(proc.total_cost))
             : "Rp0"
         }`,
-        pageWidth - margin - 50, // Positioned on the right side
+        pageWidth - margin - 50,
         currentY + lineHeight * 2
       );
       currentY += lineHeight * 4;
-
-      // Section Headers
+  
+      // Garis Pemisah
+      doc.setLineWidth(0.5);
+      doc.line(margin, currentY, pageWidth - margin, currentY);
+      currentY += lineHeight;
+  
+      // Kendaraan Section
       doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
       doc.text("KENDARAAN", margin, currentY);
       currentY += lineHeight;
-      doc.setFontSize(10);
-
-      // Kendaraan Table Headers
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+  
       const kendaraanHeaders = [
-        "No",
-        "Plat Kendaraan",
-        "No Lambung",
-        "Driver Name",
-        "Cargo",
-        "Origin",
-        "Periode Mulai",
-        "Periode Berakhir",
-        "Biaya",
-        "Keterangan",
+        "No", "Plat\nKendaraan", "No\nLambung", "Driver\nName", "Cargo", "Origin",
+        "Periode\nMulai", "Periode\nBerakhir", "Biaya", "Keterangan"
       ];
       const kendaraanColWidths = [10, 25, 20, 30, 25, 25, 20, 20, 20, 25];
-      const kendaraanXPositions = kendaraanColWidths.reduce(
-        (acc, width, index) => {
-          acc.push((acc[index - 1] || margin) + width);
-          return acc;
-        },
-        [] as number[]
-      );
-
-      // Draw Kendaraan Headers
+      const kendaraanXPositions = kendaraanColWidths.reduce((acc, width, index) => {
+        acc.push((acc[index - 1] || margin) + width);
+        return acc;
+      }, [] as number[]);
+  
+      // Draw Kendaraan Table Header with bold and centered text
+      
+      doc.setFont('helvetica', 'bold');
       kendaraanHeaders.forEach((header, index) => {
-        doc.text(
-          header,
-          kendaraanXPositions[index] - kendaraanColWidths[index],
-          currentY
-        );
+        doc.text(header, kendaraanXPositions[index] - kendaraanColWidths[index] / 2, currentY, { align: "center" });
       });
       currentY += lineHeight;
-
-      // Draw Kendaraan Rows
+  
+      // Garis Pemisah Header
+      doc.setLineWidth(0.3);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'normal');
+      doc.line(margin, currentY, pageWidth - margin, currentY);
+      currentY += lineHeight;
+  
+      // Draw Kendaraan Rows with borders and proper alignment
       proc.permitted.forEach((item, index) => {
-        const row = [
+        const details = [
           `${index + 1}`,
           item.plate_number || "N/A",
           item.no_lambung || "N/A",
@@ -288,113 +284,105 @@ const ProcessListView = () => {
           new Date(item.start_date).toLocaleDateString("id-ID"),
           new Date(item.expired_at).toLocaleDateString("id-ID"),
           item.total_cost
-            ? new Intl.NumberFormat("id-ID", {
-                style: "currency",
-                currency: "IDR",
-                minimumFractionDigits: 0,
-              }).format(Number(item.total_cost))
+            ? new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(Number(item.total_cost))
             : "Rp0",
-          item.notes || "",
+          // item.notes || "",
         ];
-
-        row.forEach((cell, colIndex) => {
-          doc.text(
-            cell,
-            kendaraanXPositions[colIndex] - kendaraanColWidths[colIndex],
-            currentY
-          );
+  
+        details.forEach((detail, colIndex) => {
+          doc.text(detail, kendaraanXPositions[colIndex] - kendaraanColWidths[colIndex] / 2, currentY, { align: "center" });
         });
         currentY += lineHeight;
-
-        // Check for page overflow
+  
+        // Garis Pemisah Tabel
+        doc.setLineWidth(0.3);
+        doc.line(margin, currentY, pageWidth - margin, currentY);
+  
+        // Check for page overflow and add a new page if necessary
         if (currentY > doc.internal.pageSize.getHeight() - margin) {
           doc.addPage();
           currentY = margin;
         }
       });
-
-      // Add some space before Personil section
+  
+      // Add space between sections
       currentY += lineHeight;
-
-      // Personil Section Header
+  
+      // Personil Section
       doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
       doc.text("PERSONIL", margin, currentY);
       currentY += lineHeight;
-      doc.setFontSize(10);
-
-      // Personil Table Headers
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+  
       const personilHeaders = [
-        "No",
-        "Nama",
-        "No KTP/SIM",
-        "Lokasi Kerja",
-        "Periode",
-        "Keterangan",
+        "No", "Nama", "No KTP/SIM", "Lokasi Kerja", "Periode", "Keterangan"
       ];
       const personilColWidths = [10, 40, 30, 35, 20, 25];
-      const personilXPositions = personilColWidths.reduce(
-        (acc, width, index) => {
-          acc.push((acc[index - 1] || margin) + width);
-          return acc;
-        },
-        [] as number[]
-      );
-
-      // Draw Personil Headers
+      const personilXPositions = personilColWidths.reduce((acc, width, index) => {
+        acc.push((acc[index - 1] || margin) + width);
+        return acc;
+      }, [] as number[]);
+  
+      // Draw Personil Table Header with bold and centered text
+      doc.setFont('helvetica', 'bold');
       personilHeaders.forEach((header, index) => {
-        doc.text(
-          header,
-          personilXPositions[index] - personilColWidths[index],
-          currentY
-        );
+        doc.text(header, personilXPositions[index] - personilColWidths[index] / 2, currentY, { align: "center" });
       });
       currentY += lineHeight;
-
-      // Draw Personil Rows
+  
+      // Garis Pemisah Header
+      doc.setLineWidth(0.3);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'normal');
+      doc.line(margin, currentY, pageWidth - margin, currentY);
+      currentY += lineHeight;
+  
+      // Draw Personil Rows with borders and proper alignment
       proc.personnels.forEach((person, index) => {
-        const row = [
+        const details = [
           `${index + 1}`,
           person.name || "N/A",
           person.identity_number || "N/A",
-          locationMap[person.location_id] || "N/A", // Mapped location name
-          "1 Bulan", // Adjust if period is available
+          locationMap[person.location_id] || "N/A",
+          "1 Bulan", // Adjust if you have actual period data
           person.notes || "",
         ];
-
-        row.forEach((cell, colIndex) => {
-          doc.text(
-            cell,
-            personilXPositions[colIndex] - personilColWidths[colIndex],
-            currentY
-          );
+  
+        details.forEach((detail, colIndex) => {
+          doc.text(detail, personilXPositions[colIndex] - personilColWidths[colIndex] / 2, currentY, { align: "center" });
         });
         currentY += lineHeight;
-
-        // Check for page overflow
+  
+        // Garis Pemisah Tabel
+        doc.setLineWidth(0.3);
+        doc.line(margin, currentY, pageWidth - margin, currentY);
+  
+        // Check for page overflow and add a new page if necessary
         if (currentY > doc.internal.pageSize.getHeight() - margin) {
           doc.addPage();
           currentY = margin;
         }
       });
-
-      // Add some space before Footer
-      currentY += lineHeight;
-
-      // Footer Notes
+  
+      // Footer Section
+      currentY += lineHeight; // Space before Footer
       doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
       doc.text("NOTE:", margin, currentY);
       currentY += lineHeight;
       const notes = [
         "Pembayaran dapat dilakukan via transfer ke rekening PT. Kaltim Industrial Estate",
         "Bank Mandiri 1480090676255, BRI: 0565010000007307, BNI: 0084209391",
-        "Berikan Bukti Pembayaran ke Petugas KIE untuk ditindak lanjuti surat ijin masuk kawasan KIE",
+        "Berikan Bukti Pembayaran ke Petugas KIE untuk ditindak lanjuti surat ijin masuk kawasan KIE"
       ];
-      notes.forEach((note) => {
+      notes.forEach(note => {
         doc.text(note, margin, currentY);
         currentY += lineHeight;
       });
-
-      // Signatures
+  
+      // Signatures Section
       currentY += lineHeight;
       doc.text("Bontang, 30 Juni 2024", pageWidth - margin - 50, currentY);
       currentY += lineHeight;
@@ -403,12 +391,22 @@ const ProcessListView = () => {
       doc.text("Rugun Sitohang", pageWidth - margin - 50, currentY);
       currentY += lineHeight;
       doc.text("Manager Rekons & Kawasan", pageWidth - margin - 50, currentY);
-
+  
       // Save PDF
       doc.save(`IMK_${proc.imk_number}.pdf`);
       toast.success(`PDF untuk Proses IMK ${proc.imk_number} telah diunduh!`);
     },
     [locationMap]
+  );
+
+  
+  const handleUpdateDataClick = useCallback(
+    (vehicle: ProcessIMK) => {
+      navigate("/process-form", {
+        state: { id: vehicle.id, vehicle, isEdit: true },
+      });
+    },
+    [navigate]
   );
 
   // New function to handle Sticker Preview
@@ -499,7 +497,7 @@ const ProcessListView = () => {
           (proc) =>
             proc.imk_number.toLowerCase().includes(search) ||
             proc.document_number.toLowerCase().includes(search) ||
-            proc.customer.toLowerCase().includes(search) // Added customer search
+            proc.customer_id.toLowerCase().includes(search) // Added customer search
         )
       );
     },
@@ -535,7 +533,7 @@ const ProcessListView = () => {
       },
       {
         header: "Customer",
-        accessorKey: "customer",
+        accessorKey: "customer_id",
         enableColumnFilter: false,
         cell: (cell: any) => (
           <div className="px-3.5 py-2.5">{cell.getValue()}</div>
@@ -646,16 +644,11 @@ const ProcessListView = () => {
               Detail Vehicles
             </button>
             <button
-              className="flex items-center px-3 py-1 text-sm font-medium text-white bg-[#016FAE] rounded hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              onClick={() =>
-                navigate("/process-form", {
-                  state: { process: cell.row.original },
-                })
-              }
-              aria-label={`Edit proses IMK ${cell.row.original.imk_number}`}
+              className="flex items-center px-3 py-1 text-sm font-medium text-white bg-[#016FAE] rounded hover:bg-blue-200"
+              onClick={() => handleUpdateDataClick(cell.row.original)}
+              // aria-label={`Edit tenant for ${cell.row.original.document_number}`}
             >
-              <FileEdit className="mr-1 size-4" />
-              Edit
+              <FileEdit className="mr-1 size-4" /> Edit
             </button>
             <button
               className="flex items-center px-3 py-1 text-sm font-medium text-white bg-green-500 rounded hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -683,6 +676,7 @@ const ProcessListView = () => {
       handleDetailClick,
       handlePDFClick,
       handleStickerClick,
+      handleUpdateDataClick
     ]
   );
 

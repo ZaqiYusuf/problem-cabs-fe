@@ -9,6 +9,60 @@ const api = axios.create({
   },
 });
 
+
+const apiForm = axios.create({
+  baseURL: "http://localhost:8000/api",
+  headers: {
+    "Content-Type": "multipart/form-data",
+  },
+})
+
+apiForm.defaults.headers.post["Content-Type"] = "multipart/form-data";
+
+
+apiForm.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("accessToken");
+
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (err) => Promise.reject(err)
+);
+
+
+
+// Interceptor untuk handle response dan error
+apiForm.interceptors.response.use(
+  (response) => {
+    return response.data ? response.data : response;
+  },
+  (error) => {
+    console.log("API Error:", error);
+
+    if (error.response) {
+      if (error.response.status === 401) {
+        localStorage.removeItem("authUser");
+        localStorage.removeItem("accessToken");
+        window.location.href = "/login";
+        return Promise.reject(error);
+      }
+
+      if (error.response.status === 403) {
+        toast.error("You do not have permission to access this resource.");
+        return Promise.reject(error);
+      }
+    }
+
+    const message = getErrorMessage(error);
+    return Promise.reject(message);
+  }
+);
+
+
 // Content type untuk POST
 api.defaults.headers.post["Content-Type"] = "application/json";
 
@@ -80,6 +134,8 @@ class APIClient {
    * Posts given data to url
    */
   create = (url: string, data: any) => api.post(url, data);
+
+  createForm = (url: string, data: any) => apiForm.post(url, data);
 
   /**
    * Updates data

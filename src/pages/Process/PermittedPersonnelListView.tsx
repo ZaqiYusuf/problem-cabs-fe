@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
 import BreadCrumb from "Common/BreadCrumb";
 import Select from "react-select";
 import TableContainer from "Common/TableContainer";
@@ -16,6 +16,9 @@ import { useFormik } from "formik";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
+import { getEntryPermits, updateEntryPermits } from "helpers/backend_helper";
+
 
 // TypeScript interfaces
 interface PermittedPersonnel {
@@ -36,22 +39,7 @@ interface Option {
 const PermittedPersonnelListView = () => {
   const navigate = useNavigate();
 
-  const [permittedPersonnel, setPermittedPersonnel] = useState<PermittedPersonnel[]>([
-    {
-      id: 1,
-      name: "Agus",
-      noKTPorSIM: "1234567890",
-      location: "Jakarta",
-      package: "Non Tenant Light Vehicle (Non Niaga) Accidental",
-    },
-    {
-      id: 2,
-      name: "Dadang",
-      noKTPorSIM: "0987654321",
-      location: "Bandung",
-      package: "Tenant Light Vehicle (Non Niaga) 6 Bulan",
-    },
-  ]);
+  const [permittedPersonnel, setPermittedPersonnel] = useState<PermittedPersonnel[]>([]);
 
   const packageOptions: Option[] = [
     {
@@ -67,6 +55,54 @@ const PermittedPersonnelListView = () => {
       value: "Tenant Medium Vehicle 12 Bulan",
     },
   ];
+
+
+
+  const getPersonnel = async () => {
+    try {
+      const response: any = await getEntryPermits();
+      console.log("Respons dari API:", response);
+  
+      if (Array.isArray(response.process_imks)) {
+        const mappedPersonnel = response.process_imks.flatMap((process: any) =>
+          // Iterasi melalui setiap proses IMK
+          (process.personnels || []).map((personnel: any) => {
+            // Menyusun data personel
+            const vehicle = process.vehicles.find((vehicle: any) => vehicle.id === process.id); // Menemukan kendaraan berdasarkan ID IMK
+  
+            return {
+              id: personnel.id,
+              name: personnel.name || "Unknown",
+              noKTPorSIM: vehicle?.sim || "Unknown", // Ambil SIM dari kendaraan yang terkait
+              location: personnel.location?.location || "Unknown",
+              package: personnel.package?.periode || "Unknown"
+            };
+          })
+        );
+  
+        console.log("Data yang sudah dipetakan:", mappedPersonnel);
+        setPermittedPersonnel(mappedPersonnel);
+        setFilteredPermittedPersonnel(mappedPersonnel);
+      } else {
+        console.error("process_imks bukan array:", response.process_imks);
+        setPermittedPersonnel([]);
+        setFilteredPermittedPersonnel([]);
+      }
+    } catch (error) {
+      console.error("Error saat memuat data:", error);
+      setPermittedPersonnel([]);
+      setFilteredPermittedPersonnel([]);
+    }
+  };
+  
+  
+
+  useEffect(() => {
+    getPersonnel();
+  }, []);
+
+
+
 
   const [filteredPermittedPersonnel, setFilteredPermittedPersonnel] = useState<PermittedPersonnel[]>(permittedPersonnel);
   const [show, setShow] = useState<boolean>(false);

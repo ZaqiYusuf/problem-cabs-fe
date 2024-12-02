@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
 import BreadCrumb from "Common/BreadCrumb";
 import Select from "react-select";
 import TableContainer from "Common/TableContainer";
@@ -18,6 +18,12 @@ import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+
+import { getEntryPermits, updateEntryPermits } from "helpers/backend_helper";
+
+
+
+
 // TypeScript interfaces
 interface PermittedVehicle {
   id: number;
@@ -32,6 +38,7 @@ interface PermittedVehicle {
   start_date: string | null;
   expired_at: string | null;
 }
+
 
 interface Option {
   readonly label: string;
@@ -48,37 +55,14 @@ const locationOptions: Option[] = [
   { label: "Bali", value: "Bali" },
 ];
 
+
+
+
 const PermittedVehicleListView = () => {
   const navigate = useNavigate();
+  const [permittedVehicles, setPermittedVehicles] = useState<PermittedVehicle[]>([]);
 
-  const [permittedVehicles, setPermittedVehicles] = useState<PermittedVehicle[]>([
-    {
-      id: 1,
-      id_imk: "IMK 001/KIE/X/2024",
-      periode_id: "Non Tenant Light Vehicle (Non Niaga) Accidental",
-      vehicle_id: "B 1234 XYZ",
-      driver_id: "Agus",
-      cargo: "Electronics",
-      origin: "Jakarta",
-      sticker_number: "1",
-      location: "Jakarta", // Example location
-      start_date: "2024-01-01",
-      expired_at: "2024-12-31",
-    },
-    {
-      id: 2,
-      id_imk: "IMK 001/KIE/X/2024",
-      periode_id: "Tenant Light Vehicle (Non Niaga) 6 Bulan",
-      vehicle_id: "D 4567 XYZ",
-      driver_id: "Dadang",
-      cargo: "Furniture",
-      origin: "Bandung",
-      sticker_number: "2",
-      location: "Bandung", // Example location
-      start_date: "2024-02-15",
-      expired_at: "2024-11-30",
-    },
-  ]);
+
 
   const packageOptions: Option[] = [
     {
@@ -112,6 +96,54 @@ const PermittedVehicleListView = () => {
     }
   }, [eventData]);
 
+
+
+  const getCustomer = async () => {
+    try {
+      const response: any = await getEntryPermits();
+      console.log("Respons dari API:", response);
+
+      if (Array.isArray(response.process_imks)) {
+        const mappedVehicles = response.process_imks.flatMap((process: any) =>
+          (process.vehicles || []).map((vehicle: any) => ({
+            id: vehicle.id,
+            id_imk: process.imk_number,
+            periode_id: vehicle.package.periode || "Unknown",
+            vehicle_id: vehicle.plate_number || "Unknown",
+            driver_id: vehicle.driver_name || "Unknown",
+            cargo: vehicle.cargo || "Unknown",
+            origin: vehicle.origin || "Unknown",
+            plate_number: vehicle.plate_number || "Unknown", // Tambahkan field ini
+            sticker_number: vehicle.number_stiker || "Unknown",
+            location: vehicle.location.location || "Unknown",
+            start_date: vehicle.start_date || null,
+            expired_at: vehicle.expired_at || null,
+          }))
+        );
+        
+
+        console.log("Data yang sudah dipetakan:", mappedVehicles);
+        setPermittedVehicles(mappedVehicles);
+        setFilteredPermittedVehicles(mappedVehicles);
+      } else {
+        console.error("process_imks bukan array:", response.process_imks);
+        setPermittedVehicles([]);
+        setFilteredPermittedVehicles([]);
+      }
+    } catch (error) {
+      console.error("Error saat memuat data:", error);
+      setPermittedVehicles([]);
+      setFilteredPermittedVehicles([]);
+    }
+  };
+
+  useEffect(() => {
+    getCustomer();
+  }, []);
+
+
+
+
   const validation = useFormik({
     initialValues: {
       id_imk: eventData?.id_imk || "",
@@ -138,11 +170,13 @@ const PermittedVehicleListView = () => {
       start_date: Yup.string().nullable(),
       expired_at: Yup.string().nullable(),
     }),
-    onSubmit: (values) => {
+    onSubmit: async(values) => {
       if (isEdit && eventData) {
         setPermittedVehicles((prevVehicles) =>
           prevVehicles.map((veh) => (veh.id === eventData.id ? { ...veh, ...values } : veh))
         );
+
+        await updateEntryPermits(eventData);
         toast.success("Permitted Vehicle updated successfully!");
       } else {
         const newVehicle = { id: Date.now(), ...values } as PermittedVehicle;

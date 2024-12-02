@@ -1,11 +1,14 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
 import BreadCrumb from "Common/BreadCrumb";
 import TableContainer from "Common/TableContainer";
 
 // Icons
-import { Search, Trash2, Plus, FileEdit } from "lucide-react";
+import { Search, Trash2, Plus, FileEdit, Check } from "lucide-react";
 import Modal from "Common/Components/Modal";
 import DeleteModal from "Common/DeleteModal";
+import ApproveModal from "Common/ApproveModal";
+import { postPayment , getPayments, updatePayments} from "helpers/backend_helper";
+
 
 // Formik
 import * as Yup from "yup";
@@ -18,7 +21,6 @@ import "react-toastify/dist/ReactToastify.css";
 // TypeScript interfaces
 interface Payment {
   id: number;
-  // user_id: string;
   // id_customer: string;
   id_imk: string;
   pay_date: string; // ISO date string
@@ -28,10 +30,12 @@ interface Payment {
     | "pending"
     | "cancel"
     | "expire"
+    | "paid"
     | "refund"
     | "failure";
   name_pay: string;
-  payment_method: string; // New Field
+  pay_method: string; // New Field
+  user_id: string;
   // redirect_url: string;
   order_id: string;
   note_pay: string;
@@ -41,50 +45,23 @@ interface Payment {
 
 const PaymentsListView = () => {
   // Dummy data state
-  const [payments, setPayments] = useState<Payment[]>([
-    {
-      id: 1,
-      // user_id: "1",
-      // id_customer: "PT. Angkasa Pura I",
-      id_imk: "IMK 001/KIE/X/2024",
-      pay_date: "2024-04-25",
-      amount_pay: "1000",
-      status_pay: "capture",
-      name_pay: "Satria",
-      payment_method: "Manual", // New Field
-      // redirect_url: "https://example.com/redirect",
-      order_id: "ORDER001",
-      note_pay: "First payment",
-      created_at: "2024-04-20T10:00:00Z",
-      updated_at: "2024-04-20T10:00:00Z",
-    },
-    {
-      id: 2,
-      // user_id: "2",
-      // id_customer: "PT. Citra Mandiri",
-      id_imk: "IMK 002/KIE/X/2024",
-      pay_date: "2024-05-15",
-      amount_pay: "2000",
-      status_pay: "pending",
-      name_pay: "-",
-      payment_method: "Payment Gateaway", // New Field
-      // redirect_url: "https://example.com/redirect",
-      order_id: "ORDER002",
-      note_pay: "Second payment",
-      created_at: "2024-04-21T11:00:00Z",
-      updated_at: "2024-04-21T11:00:00Z",
-    },
-    // Add more payments as needed
-  ]);
-
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [filteredPayments, setFilteredPayments] = useState<Payment[]>(payments);
   const [show, setShow] = useState<boolean>(false);
   const [isEdit, setIsEdit] = useState<boolean>(false);
   const [eventData, setEventData] = useState<Payment | undefined>(undefined);
 
+
   // Delete Modal
   const [deleteModal, setDeleteModal] = useState<boolean>(false);
+  const [approveModal, setApproveModal] = useState<boolean>(false);
   const deleteToggle = useCallback(() => setDeleteModal((prev) => !prev), []);
+
+  // State untuk Approve Modal
+  const approveToggle = useCallback(() => setApproveModal((prev) => !prev), []);
+
+
+
 
   // Handle Delete
   const handleDelete = useCallback(() => {
@@ -107,6 +84,27 @@ const PaymentsListView = () => {
     setShow(true);
   }, []);
 
+
+  const updateDataPayment = async (data:any) => {
+    await updatePayments(data).then(()=>{
+      getPayments();
+    });
+  };
+
+
+  const getDataPayments = async () => {
+    await getPayments().then((response:any)=>{
+      setPayments(response.payment)
+      setFilteredPayments(response.payment)
+    });
+  };
+
+  const PostDataPayment = async (data:any) => {
+    await postPayment(data).then(()=>{
+      getPayments();
+    });
+  };
+
   // Handle Add
   const handleAdd = useCallback(() => {
     setEventData(undefined);
@@ -118,6 +116,52 @@ const PaymentsListView = () => {
   const onClickDelete = useCallback((pay: Payment) => {
     setDeleteModal(true);
     setEventData(pay);
+  }, []);
+
+
+  const onClickApprove = useCallback((pay: Payment) => {
+    setApproveModal(true); // Buka modal approve
+    setEventData(pay); // Simpan data pembayaran ke eventData
+  }, []);
+
+  // Handle Approve
+  const handleApprove = useCallback(async () => {
+    if (!eventData) {
+      toast.error("Data pembayaran tidak ditemukan!");
+      return;
+    }
+
+    try {
+      console.log("Mencoba approve payment dengan data:", eventData);
+
+      // Update status menjadi 'paid' di backend
+      const updatedPayment: Payment = {
+        ...eventData,
+        status_pay: "paid", // Update status
+      };
+
+      await updatePayments(updatedPayment)
+        .then(() => {
+          toast.success("Payment berhasil di-approve!");
+          getDataPayments(); // Refresh data setelah berhasil update
+        })
+        .catch((error) => {
+          console.error("Error saat meng-update payment:", error);
+          toast.error("Gagal mengubah status payment.");
+        });
+    } catch (error) {
+      console.error("Error saat handleApprove:", error);
+      toast.error("Terjadi kesalahan pada proses approve.");
+    } finally {
+      setApproveModal(false); // Tutup modal
+    }
+  }, [eventData, getDataPayments]);
+
+
+
+
+  useEffect(() => {
+    getDataPayments();
   }, []);
 
   // Search Data
@@ -146,22 +190,14 @@ const PaymentsListView = () => {
           <div className="px-3.5 py-2.5">{cell.getValue()}</div>
         ),
       },
-      // {
-      //   header: "User ID",
-      //   accessorKey: "user_id",
-      //   enableColumnFilter: false,
-      //   cell: (cell: any) => (
-      //     <div className="px-3.5 py-2.5">{cell.getValue()}</div>
-      //   ),
-      // },
-      // {
-      //   header: "Customer",
-      //   accessorKey: "id_customer",
-      //   enableColumnFilter: false,
-      //   cell: (cell: any) => (
-      //     <div className="px-3.5 py-2.5">{cell.getValue()}</div>
-      //   ),
-      // },
+      {
+        header: "User ID",
+        accessorKey: "user_id",
+        enableColumnFilter: false,
+        cell: (cell: any) => (
+          <div className="px-3.5 py-2.5">{cell.getValue()}</div>
+        ),
+      },
       {
         header: "IMK Number",
         accessorKey: "id_imk",
@@ -202,6 +238,8 @@ const PaymentsListView = () => {
           <div className="px-3.5 py-2.5 capitalize">{cell.getValue()}</div>
         ),
       },
+
+      
       {
         header: "Payer Name",
         accessorKey: "name_pay",
@@ -212,20 +250,20 @@ const PaymentsListView = () => {
       },
       {
         header: "Payment Method", // New Column
-        accessorKey: "payment_method",
+        accessorKey: "pay_method",
         enableColumnFilter: false,
         cell: (cell: any) => (
           <div className="px-3.5 py-2.5">{cell.getValue() || "N/A"}</div>
         ),
       },
-      // {
-      //   header: "Order ID",
-      //   accessorKey: "order_id",
-      //   enableColumnFilter: false,
-      //   cell: (cell: any) => (
-      //     <div className="px-3.5 py-2.5">{cell.getValue()}</div>
-      //   ),
-      // },
+      {
+        header: "Order ID",
+        accessorKey: "order_id",
+        enableColumnFilter: false,
+        cell: (cell: any) => (
+          <div className="px-3.5 py-2.5">{cell.getValue()}</div>
+        ),
+      },
       {
         header: "Action",
         enableColumnFilter: false,
@@ -248,12 +286,27 @@ const PaymentsListView = () => {
               <Trash2 className="mr-1 size-4" />
               Delete
             </button>
+            <button
+              className="flex items-center px-3 py-1 text-sm font-medium text-white bg-green-500 rounded hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-500"
+              onClick={() => onClickApprove(cell.row.original)} // Fungsi untuk membuka modal Approve
+              aria-label={`Approve payment for ${cell.row.original.name_pay}`}
+            >
+              <Check className="mr-1 size-4" />
+              Approve
+            </button>
+
           </div>
         ),
       },
     ],
     [handleUpdateDataClick, onClickDelete]
   );
+
+
+
+
+
+
 
   // Formik Validation
   interface FormValues {
@@ -266,11 +319,13 @@ const PaymentsListView = () => {
       | "capture"
       | "pending"
       | "cancel"
+      | "paid"
       | "expire"
       | "refund"
       | "failure";
     name_pay: string;
-    payment_method: string; // New Field
+    pay_method: string; // New Field
+    user_id: string;
     // redirect_url: string;
     order_id: string;
     note_pay: string;
@@ -288,7 +343,8 @@ const PaymentsListView = () => {
       amount_pay: isEdit && eventData ? eventData.amount_pay : "",
       status_pay: isEdit && eventData ? eventData.status_pay : "pending",
       name_pay: isEdit && eventData ? eventData.name_pay : "",
-      payment_method: isEdit && eventData ? eventData.payment_method : "", // New Field
+      pay_method: isEdit && eventData ? eventData.pay_method : "", // New Field
+      user_id: isEdit && eventData ? eventData.user_id : "", // New Field
       // redirect_url: isEdit && eventData ? eventData.redirect_url : "",
       order_id: isEdit && eventData ? eventData.order_id : "",
       note_pay: isEdit && eventData ? eventData.note_pay : "",
@@ -299,7 +355,7 @@ const PaymentsListView = () => {
       // user_id: Yup.string().required("Please enter a user ID"),
       // id_customer: Yup.string().required("Please enter a customer ID"),
       id_imk: Yup.string().required("Please enter an IMK ID"),
-      pay_date: Yup.date().required("Please select a payment date"),
+      // pay_date: Yup.date().required("Please select a payment date"),
       amount_pay: Yup.string().required("Please enter the payment amount"),
       status_pay: Yup.mixed<
         "capture" | "pending" | "cancel" | "expire" | "refund" | "failure"
@@ -310,7 +366,7 @@ const PaymentsListView = () => {
         )
         .required("Please select a payment status"),
       name_pay: Yup.string().required("Please enter the payer's name"),
-      payment_method: Yup.string().required("Please enter a payment method"), // New Field
+      pay_method: Yup.string().required("Please enter a payment method"), // New Field
       // redirect_url: Yup.string()
       //   .url("Invalid URL")
       //   .required("Please enter a redirect URL"),
@@ -318,7 +374,8 @@ const PaymentsListView = () => {
       note_pay: Yup.string().required("Please enter a note"),
     }),
 
-    onSubmit: (values) => {
+    onSubmit: async(values) => {
+      console.log("onSubmit", values)
       if (isEdit && eventData) {
         // Update payment
         const updatedPayment: Payment = {
@@ -326,11 +383,12 @@ const PaymentsListView = () => {
           // user_id: values.user_id,
           // id_customer: values.id_customer,
           id_imk: values.id_imk,
-          pay_date: values.pay_date,
+          pay_date: new Date().toISOString(),
           amount_pay: values.amount_pay,
           status_pay: values.status_pay,
           name_pay: values.name_pay,
-          payment_method: values.payment_method, // New Field
+          pay_method: values.pay_method, // New Field
+          user_id: values.user_id,
           // redirect_url: values.redirect_url,
           order_id: values.order_id,
           note_pay: values.note_pay,
@@ -347,28 +405,28 @@ const PaymentsListView = () => {
             pay.id === updatedPayment.id ? updatedPayment : pay
           )
         );
+        await updateDataPayment(updatedPayment);
         toast.success("Payment berhasil diperbarui!");
       } else {
         // Add new payment
         const newPayment: Payment = {
           id: payments.length ? Math.max(...payments.map((p) => p.id)) + 1 : 1,
-          // user_id: values.user_id,
-          // id_customer: values.id_customer,
           id_imk: values.id_imk,
           pay_date: values.pay_date,
           amount_pay: values.amount_pay,
           status_pay: values.status_pay,
           name_pay: values.name_pay,
-          payment_method: values.payment_method, // New Field
-          // redirect_url: values.redirect_url,
+          pay_method: values.pay_method, // New Field
+          user_id: values.user_id,
           order_id: values.order_id,
           note_pay: values.note_pay,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          // upload_file: values.upload_file || null, // If needed
         };
-        setPayments((prevPayments) => [...prevPayments, newPayment]);
+        console.log(newPayment)
+        // setPayments((prevPayments) => [...prevPayments, newPayment]);
         setFilteredPayments((prevFiltered) => [...prevFiltered, newPayment]);
+        await PostDataPayment(newPayment)
         toast.success("Payment berhasil ditambahkan!");
       }
       toggle();
@@ -376,11 +434,25 @@ const PaymentsListView = () => {
   });
 
   const toggle = useCallback(() => {
-    setShow((prev) => !prev);
-    setEventData(undefined);
-    setIsEdit(false);
-    validation.resetForm();
-  }, [validation]);
+    if (show) {
+      setShow(false);
+      setEventData(undefined);
+      setIsEdit(false);
+      validation.resetForm();
+    } else {
+      setShow(true);
+      setEventData(undefined);
+      validation.resetForm();
+    }
+  }, [show, validation]);
+
+
+
+
+
+
+
+
 
   return (
     <React.Fragment>
@@ -390,7 +462,17 @@ const PaymentsListView = () => {
         onHide={deleteToggle}
         onDelete={handleDelete}
       />
+
+      <ApproveModal
+        show={approveModal}
+        onHide={approveToggle} // Ganti deleteToggle dengan approveToggle
+        onApprove={handleApprove} // Handler untuk Approve
+      />
+
+
       <ToastContainer closeButton={false} limit={1} />
+
+      
       <div className="grid grid-cols-1 gap-x-5 xl:grid-cols-12">
         <div className="xl:col-span-12">
           <div className="card" id="paymentsTable">
@@ -464,6 +546,16 @@ const PaymentsListView = () => {
         </div>
       </div>
 
+
+
+
+
+
+
+
+
+
+
       {/* Payment Modal */}
       <Modal
         show={show}
@@ -482,14 +574,18 @@ const PaymentsListView = () => {
           </Modal.Title>
         </Modal.Header>
         <Modal.Body className="p-4 overflow-y-auto">
-          <form
-            action="#!"
-            onSubmit={(e) => {
-              e.preventDefault();
-              validation.handleSubmit();
-              return false;
-            }}
-          >
+        <form
+          action="#!"
+          onSubmit={(e) => {
+            e.preventDefault();
+            console.log("Form is being submitted!");
+            console.log("Validation errors:", validation.errors);
+            validation.handleSubmit()
+            console.log("Validation errors:", validation.errors);
+            console.log("finish submitted!");
+
+          }}
+        >
             {/* Grid Layout for Form Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Customer ID Field */}
@@ -542,7 +638,7 @@ const PaymentsListView = () => {
               </div>
 
               {/* Pay Date Field */}
-              <div>
+              {/* <div>
                 <label
                   htmlFor="payDateInput"
                   className="inline-block mb-2 text-base font-medium"
@@ -561,7 +657,7 @@ const PaymentsListView = () => {
                 {validation.touched.pay_date && validation.errors.pay_date ? (
                   <p className="text-red-400">{validation.errors.pay_date}</p>
                 ) : null}
-              </div>
+              </div> */}
 
               {/* Amount Pay Field */}
               <div>
@@ -587,6 +683,34 @@ const PaymentsListView = () => {
                 ) : null}
               </div>
 
+
+              
+              <div>
+                <label
+                  htmlFor="paymentMethodInput"
+                  className="inline-block mb-2 text-base font-medium"
+                >
+                  User_id
+                </label>
+                <input
+                  type="text"
+                  id="paymentMethodInput"
+                  className="form-input w-full border-slate-200 dark:border-zink-500 focus:outline-none focus:border-custom-500 placeholder:text-slate-400 dark:placeholder:text-zink-200"
+                  placeholder="Enter payment method"
+                  name="user_id"
+                  onChange={validation.handleChange}
+                  onBlur={validation.handleBlur}
+                  value={validation.values.user_id}
+                />
+                {validation.touched.user_id &&
+                validation.errors.user_id ? (
+                  <p className="text-red-400">
+                    {validation.errors.user_id}
+                  </p>
+                ) : null}
+              </div>
+
+
               {/* Status Pay Field */}
               <div>
                 <label
@@ -607,6 +731,7 @@ const PaymentsListView = () => {
                   <option value="capture">Capture</option>
                   <option value="pending">Pending</option>
                   <option value="cancel">Cancel</option>
+                  <option value="cancel">Paid</option>
                   <option value="expire">Expire</option>
                   <option value="refund">Refund</option>
                   <option value="failure">Failure</option>
@@ -655,41 +780,45 @@ const PaymentsListView = () => {
                   id="paymentMethodInput"
                   className="form-input w-full border-slate-200 dark:border-zink-500 focus:outline-none focus:border-custom-500 placeholder:text-slate-400 dark:placeholder:text-zink-200"
                   placeholder="Enter payment method"
-                  name="payment_method"
+                  name="pay_method"
                   onChange={validation.handleChange}
                   onBlur={validation.handleBlur}
-                  value={validation.values.payment_method}
+                  value={validation.values.pay_method}
                 />
-                {validation.touched.payment_method &&
-                validation.errors.payment_method ? (
+                {validation.touched.pay_method &&
+                validation.errors.pay_method ? (
                   <p className="text-red-400">
-                    {validation.errors.payment_method}
+                    {validation.errors.pay_method}
                   </p>
                 ) : null}
               </div>
 
-              {/* Order ID Field */}
-              {/* <div>
+              <div>
                 <label
-                  htmlFor="orderIdInput"
+                  htmlFor="paymentMethodInput"
                   className="inline-block mb-2 text-base font-medium"
                 >
-                  Order ID
+                  Order_id
                 </label>
                 <input
                   type="text"
-                  id="orderIdInput"
+                  id="paymentMethodInput"
                   className="form-input w-full border-slate-200 dark:border-zink-500 focus:outline-none focus:border-custom-500 placeholder:text-slate-400 dark:placeholder:text-zink-200"
-                  placeholder="Enter order ID"
+                  placeholder="Enter payment method"
                   name="order_id"
                   onChange={validation.handleChange}
                   onBlur={validation.handleBlur}
                   value={validation.values.order_id}
                 />
-                {validation.touched.order_id && validation.errors.order_id ? (
-                  <p className="text-red-400">{validation.errors.order_id}</p>
+                {validation.touched.order_id &&
+                validation.errors.order_id ? (
+                  <p className="text-red-400">
+                    {validation.errors.order_id}
+                  </p>
                 ) : null}
-              </div> */}
+              </div>
+
+
 
               {/* Note Pay Field */}
               <div className="col-span-1 md:col-span-2">
