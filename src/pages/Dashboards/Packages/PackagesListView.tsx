@@ -15,7 +15,7 @@ import { useFormik } from "formik";
 // Toastify
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { deletePackageAPI, getPackageAPI, postPackageAPI } from "helpers/backend_helper";
+import { deletePackageAPI, getPackageAPI, postPackageAPI, updatePackageAPI } from "helpers/backend_helper";
 
 // TypeScript interfaces
 interface Package {
@@ -74,6 +74,7 @@ const PackagesListView = () => {
       setFilteredPackages((prevFiltered) =>
         prevFiltered.filter((pkg) => pkg.id !== eventData.id)
       );
+      deletePackages(eventData);
       toast.success("Package berhasil dihapus!");
       setDeleteModal(false);
     }
@@ -262,6 +263,7 @@ const PackagesListView = () => {
             pkg.id === updatedPackage.id ? updatedPackage : pkg
           )
         );
+        await updatePackageAPI(updatedPackage);
         toast.success("Package berhasil diperbarui!");
       } else {
         const newPackage: Package = {

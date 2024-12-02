@@ -20,7 +20,7 @@ import { useFormik } from "formik";
 
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { getSettingAPI } from "helpers/backend_helper";
+import { getSettingAPI, postSettingAPI, updateSettingAPI, deleteSettingAPI } from "helpers/backend_helper";
 
 // TypeScript interfaces
 interface PaymentGateway {
@@ -41,8 +41,28 @@ const PaymentGatewaySettingsView = () => {
   const getSetting = async () => {
     await getSettingAPI().then((response: any) => {
       console.log(response);
-      setPaymentGateways(response.paymentGateways);
-      setFilteredPaymentGateways(response.paymentGateways);
+      setPaymentGateways(response.settings);
+      setFilteredPaymentGateways(response.settings);
+    });
+  };
+
+
+  const updateSetting = async (data:any) => {
+    await updateSettingAPI(data).then(()=>{
+      getSetting();
+    });
+  };
+
+
+  const deleteSettings = async (data: any) => {
+    await deleteSettingAPI(data.id).then(() => {
+      getSetting();
+    });
+  };
+
+  const postSetting = async (data:any) => {
+    await postSettingAPI(data).then(()=>{
+      getSetting();
     });
   };
 
@@ -64,7 +84,7 @@ const PaymentGatewaySettingsView = () => {
   const deleteToggle = useCallback(() => setDeleteModal((prev) => !prev), []);
 
   // Handle Delete
-  const handleDelete = useCallback(() => {
+  const handleDelete = useCallback( async() => {
     if (eventData) {
       setPaymentGateways((prevGateways) =>
         prevGateways.filter((gw) => gw.id !== eventData.id)
@@ -72,10 +92,13 @@ const PaymentGatewaySettingsView = () => {
       setFilteredPaymentGateways((prevFiltered) =>
         prevFiltered.filter((gw) => gw.id !== eventData.id)
       );
+
+      await deleteSettings(eventData);
       toast.success("Payment gateway deleted successfully!");
       setDeleteModal(false);
     }
   }, [eventData]);
+
 
   // Handle Update
   const handleUpdateDataClick = useCallback((gw: PaymentGateway) => {
@@ -164,15 +187,15 @@ const PaymentGatewaySettingsView = () => {
         enableColumnFilter: false,
         cell: (cell: any) => (
           <>
-            {cell.getValue() === true ? (
+            {cell.getValue() === "active" ? (
               <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded border bg-green-500 border-transparent text-green-50 dark:bg-green-500/20 dark:border-transparent">
                 <CheckCircle2 className="size-3 ltr:mr-1 rtl:ml-1"></CheckCircle2>
-                Active
+                active
               </span>
             ) : (
               <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded border bg-red-500 border-transparent text-red-50 dark:bg-red-500/20 dark:border-transparent">
                 <XCircle className="size-3 ltr:mr-1 rtl:ml-1"></XCircle>
-                Inactive
+                inactive
               </span>
             )}
           </>
@@ -245,7 +268,7 @@ const PaymentGatewaySettingsView = () => {
         .required("Please select the status"),
     }),
 
-    onSubmit: (values) => {
+    onSubmit: async(values) => {
       if (isEdit && eventData) {
         // Update payment gateway
         const updatedGateway: PaymentGateway = {
@@ -266,6 +289,10 @@ const PaymentGatewaySettingsView = () => {
             gw.id === updatedGateway.id ? updatedGateway : gw
           )
         );
+
+        toggle();
+
+        await updateSetting(updatedGateway);
         toast.success("Payment gateway updated successfully!");
       } else {
         // Add new payment gateway
@@ -284,9 +311,12 @@ const PaymentGatewaySettingsView = () => {
           ...prevFiltered,
           newGateway,
         ]);
+
+        toggle();
+
+        await postSetting(newGateway)
         toast.success("Payment gateway added successfully!");
       }
-      toggle();
     },
   });
 
@@ -534,10 +564,10 @@ const PaymentGatewaySettingsView = () => {
                 name="status"
                 onChange={validation.handleChange}
                 onBlur={validation.handleBlur}
-                value={validation.values.status}
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+                value={validation.values.status === "active" ? "active" : "inactive"}
+                >
+                <option value="active">active</option>
+                <option value="inactive">inactive</option>
               </select>
               {validation.touched.status && validation.errors.status ? (
                 <p className="text-red-400">{validation.errors.status}</p>

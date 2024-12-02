@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
 import BreadCrumb from "Common/BreadCrumb";
 import TableContainer from "Common/TableContainer";
 
@@ -14,6 +14,9 @@ import { useFormik } from "formik";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+import { getCustomerApi } from "helpers/backend_helper";
+
+
 // TypeScript interfaces
 interface Customer {
   id: number;
@@ -22,11 +25,27 @@ interface Customer {
 }
 
 const CustomersListView = () => {
-  const [customers, setCustomers] = useState<Customer[]>([
-    { id: 1, name_customer: "PT. Angkasa Pura I", tenant: "PKT" },
-    { id: 2, name_customer: "PT. Angkasa Pura II", tenant: "KMI" },
-    // Add more customers as needed
-  ]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+
+
+  const getCustomer = async () => {
+    await getCustomerApi().then((response: any) => {
+
+      const mappedCustomers = response.processImks.map((item: any) => ({
+        id: item.tenant_id,
+        name_customer: item.customer?.name_customer || "N/A",
+        tenant: item.tenant?.name_tenant || "Unknown Tenant",
+      }));
+    
+      setCustomers(mappedCustomers);
+      setFilteredCustomers(mappedCustomers); // Atur berdasarkan data langsung
+    });
+  };
+  
+  useEffect(() => {
+    getCustomer(); // Panggil hanya sekali
+  }, []);
+  
 
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>(customers);
   const [show, setShow] = useState<boolean>(false);
