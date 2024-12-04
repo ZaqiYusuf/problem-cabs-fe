@@ -108,14 +108,14 @@ const PermittedVehicleListView = () => {
           (process.vehicles || []).map((vehicle: any) => ({
             id: vehicle.id,
             id_imk: process.imk_number,
-            periode_id: vehicle.package.periode || "Unknown",
+            periode_id: vehicle.package?.periode || "Unknown",
             vehicle_id: vehicle.plate_number || "Unknown",
             driver_id: vehicle.driver_name || "Unknown",
             cargo: vehicle.cargo || "Unknown",
             origin: vehicle.origin || "Unknown",
             plate_number: vehicle.plate_number || "Unknown", // Tambahkan field ini
             sticker_number: vehicle.number_stiker || "Unknown",
-            location: vehicle.location.location || "Unknown",
+            location: vehicle.location?.location || "Unknown",
             start_date: vehicle.start_date || null,
             expired_at: vehicle.expired_at || null,
           }))

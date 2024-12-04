@@ -263,6 +263,7 @@ const PackagesListView = () => {
             pkg.id === updatedPackage.id ? updatedPackage : pkg
           )
         );
+        toggle();
         await updatePackageAPI(updatedPackage);
         toast.success("Package berhasil diperbarui!");
       } else {
@@ -277,10 +278,10 @@ const PackagesListView = () => {
         };
         newPackage.periode = `${newPackage.periode} ${newPackage.periodeType}`;
         // console.log(newPackage.periode);
+        toggle();
         await postPackages(newPackage);
         toast.success("Package berhasil ditambahkan!");
       }
-      toggle();
     },
   });
 

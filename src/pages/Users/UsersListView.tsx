@@ -183,17 +183,15 @@ const UsersListView = () => {
 
   const validation = useFormik({
     enableReinitialize: true,
-
+  
     initialValues: {
-      // id_customer: isEdit && eventData ? eventData.id_customer : "",
-      email: isEdit && eventData ? eventData.email : "",
-      level: isEdit && eventData ? eventData.level : "user",
-      block: isEdit && eventData ? eventData.block : "NO",
-      password: isEdit && eventData ? eventData.password : "",
+      email: isEdit && eventData?.email ? eventData.email : "",
+      level: isEdit && eventData?.level ? eventData.level : "user",
+      block: isEdit && eventData?.block ? eventData.block : "NO",
+      password: isEdit && eventData?.password ? eventData.password : "",
     },
-
+  
     validationSchema: Yup.object({
-      id_customer: Yup.string().nullable(),
       email: Yup.string()
         .email("Invalid email")
         .required("Please enter an email"),
@@ -211,13 +209,11 @@ const UsersListView = () => {
         .oneOf(["YES", "NO"])
         .required("Please select block status"),
     }),
-
-    onSubmit: async(values) => {
+  
+    onSubmit: async (values) => {
       if (isEdit && eventData) {
-        // Update user
         const updatedUser: User = {
           ...eventData,
-          // id_customer: values.id_customer,
           email: values.email,
           level: values.level,
           block: values.block,
@@ -225,10 +221,8 @@ const UsersListView = () => {
         };
         await updateUsers(updatedUser);
       } else {
-        // Add new user
         const newUser: User = {
           id: users.length ? Math.max(...users.map((u) => u.id)) + 1 : 1,
-          // id_customer: values.id_customer,
           email: values.email,
           level: values.level,
           block: values.block,
@@ -239,6 +233,7 @@ const UsersListView = () => {
       toggle();
     },
   });
+  
 
   const toggle = useCallback(() => {
     if (show) {

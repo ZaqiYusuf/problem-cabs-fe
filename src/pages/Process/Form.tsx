@@ -4,7 +4,7 @@ import BreadCrumb from "Common/BreadCrumb";
 import { ArrowLeft } from "lucide-react";
 import AddPermitted from "./AddPermitted";
 import AddPersonnel from "./AddPersonnel";
-import { postEntryPermits, updateEntryPermits } from "helpers/backend_helper";
+import { postEntryPermits, updateEntryPermits, getTenantAPI, getCustomerAllApi } from "helpers/backend_helper";
 
 interface Step {
   id: number;
@@ -53,6 +53,34 @@ const Stepper: React.FC<{ steps: Step[]; currentStep: number }> = ({
   </div>
 );
 
+
+
+interface Tenant {
+  id: number;
+  name_tenant: string;
+  created_at: string;
+  updated_at: string;
+}
+
+
+
+interface Customer {
+  id: number;
+  user_id: string;
+  name_customer: string;
+  tenant_id: string;
+  address: string;
+  email: string;
+  pic: string;
+  pic_number: string;
+  upload_file: string;
+  created_at: string; // Use `Date` if you're parsing it to a Date object
+  updated_at: string; // Use `Date` if you're parsing it to a Date object
+  tenants: Tenant | null; // Replace `Tenant` with the actual tenant interface if available
+}
+
+
+
 const EntryPermitForm: React.FC = () => {
   const steps: Step[] = [
     { id: 1, label: "Input Entry Permits" },
@@ -90,13 +118,61 @@ const EntryPermitForm: React.FC = () => {
       }));
     }
   }, [isEdit, location.state?.vehicle]);
+
+
+  const [tenant, setTenant] = useState<Tenant[]>([]); 
+  const [customer, setCustomer] = useState<Customer[]>([]); 
+  // const [filteredTenant, setFilteredTenant] = useState<Tenant[]>([]); // Menyimpan data tenant yang difilter
   
+
   
   
 
-  const handleInputChange = (field: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const getDataTenant = async () => {
+    try {
+      const response: any = await getTenantAPI();
+      if (response.success && response.tenants) {
+        setTenant(response.tenants); // Simpan tenants ke state tenant
+        // setFilteredTenant(response.tenants); // Jika ingin menyaring data nanti
+      } else {
+        console.error("Gagal mendapatkan data tenant:", response);
+      }
+    } catch (error) {
+      console.error("Error saat memuat tenant:", error);
+    }
   };
+
+  const getCustomerAll = async () => {
+    try {
+      const response: any = await getCustomerAllApi();
+      if (response.success && response.customers) {
+        setCustomer(response.customers); // Simpan tenants ke state tenant
+        // setFilteredTenant(response.tenants); // Jika ingin menyaring data nanti
+      } else {
+        console.error("Gagal mendapatkan data customers:", response);
+      }
+    } catch (error) {
+      console.error("Error saat memuat customers:", error);
+    }
+  };
+
+
+
+  useEffect(() => {
+    getDataTenant();
+    getCustomerAll();
+  }, []);
+
+  
+  
+
+  const handleInputChange = (key: string, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+  
 
   const calculateTotalPrice = () => {
     const permittedPrice = 200000;
@@ -195,10 +271,14 @@ const EntryPermitForm: React.FC = () => {
                   value={formData.tenant_id || ""}
                 >
                   <option value="">Select Tenant</option>
-                  <option value="2">PKT</option>
-                  <option value="3">KMI</option>
+                  {tenant.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name_tenant}
+                    </option>
+                  ))}
                 </select>
               </div>
+
               <div>
                 <label className="block mb-2 text-gray-700">Status</label>
                 <select
@@ -211,15 +291,22 @@ const EntryPermitForm: React.FC = () => {
                   <option value="Non Tenant">Non Tenant</option>
                 </select>
               </div>
+
+
               <div>
                 <label className="block mb-2 text-gray-700">Customer</label>
-                <input
-                  type="text"
+                <select
                   className="w-full px-4 py-2 border rounded-md"
-                  disabled={formData.item === "Non Tenant"}
                   onChange={(e) => handleInputChange("customer_id", e.target.value)}
                   value={formData.customer_id || ""}
-                />
+                >
+                  <option value="">Select Customer</option>
+                  {customer.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name_customer}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
