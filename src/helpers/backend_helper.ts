@@ -86,6 +86,10 @@ export const getCustomerApi = () => {
   return api.get("customers");
 }
 
+export const getCustomerAllApi = () => {
+  return api.get("customers/all/data");
+}
+
 
 
 // ENTRY PERMISSIONS

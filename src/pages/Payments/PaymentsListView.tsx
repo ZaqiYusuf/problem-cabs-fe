@@ -3,7 +3,7 @@ import BreadCrumb from "Common/BreadCrumb";
 import TableContainer from "Common/TableContainer";
 
 // Icons
-import { Search, Trash2, Plus, FileEdit, Check } from "lucide-react";
+import { Search, Trash2, Plus, FileEdit, Check, CheckCircle2, XCircle, Clock, ArrowLeft} from "lucide-react";
 import Modal from "Common/Components/Modal";
 import DeleteModal from "Common/DeleteModal";
 import ApproveModal from "Common/ApproveModal";
@@ -234,9 +234,73 @@ const PaymentsListView = () => {
         header: "Status Payment",
         accessorKey: "status_pay",
         enableColumnFilter: false,
-        cell: (cell: any) => (
-          <div className="px-3.5 py-2.5 capitalize">{cell.getValue()}</div>
-        ),
+        cell: (cell: any) => {
+          const status = cell.getValue();
+
+          // Menentukan warna dan label berdasarkan status_pay
+          const renderStatus = () => {
+            switch (status) {
+              case "capture":
+                return (
+                  <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded border bg-blue-500 border-transparent text-blue-50 dark:bg-blue-500/20 dark:border-transparent">
+                    <CheckCircle2 className="size-3 ltr:mr-1 rtl:ml-1" />
+                    Captured
+                  </span>
+                );
+              case "paid":
+                return (
+                  <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded border bg-green-500 border-transparent text-green-50 dark:bg-green-500/20 dark:border-transparent">
+                    <CheckCircle2 className="size-3 ltr:mr-1 rtl:ml-1" />
+                    Paid
+                  </span>
+                );
+              case "pending":
+                return (
+                  <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded border bg-yellow-500 border-transparent text-yellow-50 dark:bg-yellow-500/20 dark:border-transparent">
+                    <Clock className="size-3 ltr:mr-1 rtl:ml-1" />
+                    Pending
+                  </span>
+                );
+              case "cancel":
+                return (
+                  <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded border bg-gray-500 border-transparent text-gray-50 dark:bg-gray-500/20 dark:border-transparent">
+                    <XCircle className="size-3 ltr:mr-1 rtl:ml-1" />
+                    Cancelled
+                  </span>
+                );
+              case "expire":
+                return (
+                  <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded border bg-red-500 border-transparent text-red-50 dark:bg-red-500/20 dark:border-transparent">
+                    <XCircle className="size-3 ltr:mr-1 rtl:ml-1" />
+                    Expired
+                  </span>
+                );
+              case "refund":
+                return (
+                  <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded border bg-purple-500 border-transparent text-purple-50 dark:bg-purple-500/20 dark:border-transparent">
+                    <ArrowLeft className="size-3 ltr:mr-1 rtl:ml-1" />
+                    Refunded
+                  </span>
+                );
+              case "failure":
+                return (
+                  <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded border bg-red-700 border-transparent text-red-50 dark:bg-red-700/20 dark:border-transparent">
+                    <XCircle className="size-3 ltr:mr-1 rtl:ml-1" />
+                    Failed
+                  </span>
+                );
+              default:
+                return (
+                  <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded border bg-gray-300 border-transparent text-gray-600 dark:bg-gray-300/20 dark:border-transparent">
+                    Unknown
+                  </span>
+                );
+            }
+          };
+        
+          return <>{renderStatus()}</>;
+        },
+        
       },
 
       
@@ -731,7 +795,7 @@ const PaymentsListView = () => {
                   <option value="capture">Capture</option>
                   <option value="pending">Pending</option>
                   <option value="cancel">Cancel</option>
-                  <option value="cancel">Paid</option>
+                  <option value="paid">Paid</option>
                   <option value="expire">Expire</option>
                   <option value="refund">Refund</option>
                   <option value="failure">Failure</option>
