@@ -82,6 +82,10 @@ export const deleteSettingAPI = (id: any) => {
 
 //  CUSTOMERS
 
+export const postCustomer = (data: any) => {
+  return api.createForm("customers", data);
+}
+
 export const getCustomerApi = () => {
   return api.get("customers");
 }
@@ -89,6 +93,8 @@ export const getCustomerApi = () => {
 export const getCustomerAllApi = () => {
   return api.get("customers/all/data");
 }
+
+
 
 
 
@@ -111,10 +117,7 @@ export const deleteEntryPermits = (id: any) => {
 
 
 
-// Pyments
-
-
-
+// Pyments (ADMIN)
 export const getPayments = () => {
   return api.get("imk/all/data");
 }
@@ -125,4 +128,11 @@ export const updatePayments = (data: any) => {
 
 export const postPayment = (data: any) => {
   return api.createForm("imk/"+data.user_id, data);
+}
+
+
+
+// Payment (user)
+export const getPaymentsUser = () => {
+  return api.get("/user/imk");
 }

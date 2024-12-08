@@ -455,6 +455,7 @@ const ProcessListView = () => {
       toast.error("Terjadi kesalahan saat membuat pratinjau stiker.");
     }
   }, []);
+  
 
   // Handle Print from Preview Modal
   const handlePrintPreview = useCallback(() => {
@@ -476,6 +477,9 @@ const ProcessListView = () => {
       setCurrentStickerProcess(undefined);
     }
   }, [stickerPreviewURL, currentStickerProcess]);
+
+
+  
 
   // Handle Add Proses
   const handleAddProses = useCallback(() => {
@@ -504,6 +508,12 @@ const ProcessListView = () => {
     [processes]
   );
 
+    // Update filteredProcesses when processes change
+    useEffect(() => {
+      setFilteredProcesses(processes);
+    }, [processes]);
+
+    
   // Columns
   const columns = useMemo(
     () => [
@@ -680,10 +690,7 @@ const ProcessListView = () => {
     ]
   );
 
-  // Update filteredProcesses when processes change
-  useEffect(() => {
-    setFilteredProcesses(processes);
-  }, [processes]);
+
 
   return (
     <React.Fragment>

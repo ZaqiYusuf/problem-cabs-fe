@@ -26,9 +26,11 @@ interface Customer {
 
 const CustomersListView = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
 
   const getCustomer = async () => {
+    setIsLoading(true);
     await getCustomerApi().then((response: any) => {
 
       const mappedCustomers = response.processImks.map((item: any) => ({
@@ -39,11 +41,12 @@ const CustomersListView = () => {
     
       setCustomers(mappedCustomers);
       setFilteredCustomers(mappedCustomers); // Atur berdasarkan data langsung
+      setIsLoading(false);
     });
   };
   
   useEffect(() => {
-    getCustomer(); // Panggil hanya sekali
+    getCustomer();
   }, []);
   
 
@@ -240,6 +243,11 @@ const CustomersListView = () => {
               </form>
             </div>
 
+            {isLoading ? (
+              <div className="flex justify-center items-center py-10">
+              <div className="w-16 h-16 border-8 border-t-8 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+            </div>
+            ) : (
             <div className="card-body">
               {filteredCustomers && filteredCustomers.length > 0 ? (
                 <TableContainer
@@ -267,6 +275,7 @@ const CustomersListView = () => {
                 </div>
               )}
             </div>
+            )}
           </div>
         </div>
       </div>

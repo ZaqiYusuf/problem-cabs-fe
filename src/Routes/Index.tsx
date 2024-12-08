@@ -1,40 +1,36 @@
-import React from 'react';
-import { Route, Routes } from 'react-router-dom';
-import { authProtectedRoutes, publicRoutes } from './allRoutes';
-import Layout from 'Layout';
-import NonAuthLayout from "Layout/NonLayout"
-import AuthProtected from './AuthProtected';
+import React from "react";
+import { Routes, Route } from "react-router-dom";
+import AuthProtected from "../Routes/AuthProtected";
+import { authProtectedRoutes } from "../Routes/allRoutes";
+import Login from "pages/Authentication/Login";
+import Register from "pages/Register/Register";
+import Layout from "Layout";
+// import NonAuthLayout from "Layout/NonAuthLayout";
 
-const RouteIndex = () => {
+const AppRoutes = () => {
   return (
-    <React.Fragment>
-      <Routes>
-        {authProtectedRoutes.map((route: any, idx: number) => (
-          <Route
-            key={idx}
-            path={route.path}
-            element={
-              <AuthProtected>
-                <Layout>
-                  <route.component />
-                </Layout>
-              </AuthProtected>
-            }
-          />
-        ))}
-        {publicRoutes.map((route: any, idx: number) => (
-          <Route
-            path={route.path}
-            key={idx}
-            element={
-              <NonAuthLayout>
+    <Routes>
+      {/* Rute Publik */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/daftar" element={<Register />} />
+
+
+      {/* Rute Dilindungi */}
+      {authProtectedRoutes.map((route, idx) => (
+        <Route
+          key={idx}
+          path={route.path}
+          element={
+            <AuthProtected allowedRoles={route.roles}>
+              <Layout>
                 <route.component />
-              </NonAuthLayout>
-            } />
-        ))}
-      </Routes>
-    </React.Fragment>
+              </Layout>
+            </AuthProtected>
+          }
+        />
+      ))}
+    </Routes>
   );
 };
 
-export default RouteIndex;
+export default AppRoutes;

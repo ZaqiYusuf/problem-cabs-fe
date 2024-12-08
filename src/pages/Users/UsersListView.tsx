@@ -30,6 +30,9 @@ const UsersListView = () => {
   // Dummy data state
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>(users);
+  const [show, setShow] = useState<boolean>(false);
+  const [isEdit, setIsEdit] = useState<boolean>(false);
+  const [eventData, setEventData] = useState<User | undefined>(undefined);
 
   const getUsers = async () => {
     await getUserAPI().then((response:any) => {
@@ -58,16 +61,16 @@ const UsersListView = () => {
   }
 
   useEffect(() => {
+
     getUsers();
   },[]);
 
-  const [show, setShow] = useState<boolean>(false);
-  const [isEdit, setIsEdit] = useState<boolean>(false);
-  const [eventData, setEventData] = useState<User | undefined>(undefined);
 
   // Delete Modal
   const [deleteModal, setDeleteModal] = useState<boolean>(false);
   const deleteToggle = useCallback(() => setDeleteModal((prev) => !prev), []);
+  const [showServerKey, setShowServerKey] = useState<boolean>(false);
+
 
   // Handle Delete
   const handleDelete = useCallback(() => {
@@ -159,7 +162,10 @@ const UsersListView = () => {
           <div className="flex space-x-2">
             <button
               className="flex items-center px-3 py-1 text-sm font-medium text-white bg-[#016FAE] rounded hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              onClick={() => handleUpdateDataClick(cell.row.original)}
+              onClick={() => {
+                console.log("Cell data:", cell.row.original);
+                handleUpdateDataClick(cell.row.original);
+              }}              
               aria-label={`Edit user for ${cell.row.original.email}`}
             >
               <FileEdit className="mr-1 size-4" />
@@ -167,7 +173,10 @@ const UsersListView = () => {
             </button>
             <button
               className="flex items-center px-3 py-1 text-sm font-medium text-white bg-red-500 rounded hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500"
-              onClick={() => onClickDelete(cell.row.original)}
+              onClick={() => {
+                console.log("Cell data:", cell.row.original);
+                onClickDelete(cell.row.original);
+              }}
               aria-label={`Delete user for ${cell.row.original.email}`}
             >
               <Trash2 className="mr-1 size-4" />
@@ -208,9 +217,12 @@ const UsersListView = () => {
       block: Yup.string()
         .oneOf(["YES", "NO"])
         .required("Please select block status"),
+      password: Yup.string()
+      .required("Please enter an password"),
     }),
   
     onSubmit: async (values) => {
+      console.log("ini event data", eventData)
       if (isEdit && eventData) {
         const updatedUser: User = {
           ...eventData,
@@ -241,10 +253,13 @@ const UsersListView = () => {
       setEventData(undefined);
       setIsEdit(false);
       validation.resetForm();
+      setShowServerKey(false);
     } else {
       setShow(true);
       setEventData(undefined);
       validation.resetForm();
+      setShowServerKey(false);
+
     }
   }, [show, validation]);
 
@@ -394,11 +409,11 @@ const UsersListView = () => {
                 value={validation.values.level}
               >
                 <option value="user">User</option>
-                <option value="administrator">Administrator</option>
+                {/* <option value="administrator">Administrator</option> */}
                 <option value="admin">Admin</option>
-                <option value="approver">Approver</option>
-                <option value="finance">Finance</option>
-                <option value="mitra">Mitra</option>
+                {/* <option value="approver">Approver</option> */}
+                {/* <option value="finance">Finance</option> */}
+                {/* <option value="mitra">Mitra</option> */}
               </select>
               {validation.touched.level && validation.errors.level ? (
                 <p className="text-red-400">{validation.errors.level}</p>
@@ -430,27 +445,35 @@ const UsersListView = () => {
             </div>
 
             {/* Password Field */}
-            <div className="mb-3">
-              <label
-                htmlFor="passwordInput"
-                className="inline-block mb-2 text-base font-medium"
-              >
+            <div className="relative">
+            <label htmlFor="serverKeyInput" className="form-label">
                 Password
               </label>
-              <input
-                type="password"
-                id="passwordInput"
-                className="form-input border-slate-200 dark:border-zink-500 focus:outline-none focus:border-custom-500 placeholder:text-slate-400 dark:placeholder:text-zink-200"
-                placeholder="Enter password"
-                name="password"
-                onChange={validation.handleChange}
-                onBlur={validation.handleBlur}
-                value={validation.values.password}
-              />
+              <div className="relative">
+                <input
+                  type={showServerKey ? "text" : "password"}
+                  id="serverKeyInput"
+                  className="form-input border-slate-200 dark:border-zink-500 focus:outline-none focus:border-custom-500 placeholder:text-slate-400 dark:placeholder:text-zink-200 w-full"
+                  placeholder="Password"
+                  name="password"
+                  onChange={validation.handleChange}
+                  onBlur={validation.handleBlur}
+                  value={validation.values.password}
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-blue-500"
+                  onClick={() => setShowServerKey((prev) => !prev)}
+                >
+                  {showServerKey ? "Hide" : "Show"}
+                </button>
+              </div>
               {validation.touched.password && validation.errors.password ? (
                 <p className="text-red-400">{validation.errors.password}</p>
               ) : null}
+
             </div>
+
 
             {/* Form Actions */}
             <div className="flex justify-end gap-2 mt-4">

@@ -253,6 +253,7 @@ const PackagesListView = () => {
           type: values.type,
           detail: values.detail,
         };
+        updatedPackage.periode = `${updatedPackage.periode} ${updatedPackage.periodeType}`;
         setPackages((prevPackages) =>
           prevPackages.map((pkg) =>
             pkg.id === updatedPackage.id ? updatedPackage : pkg

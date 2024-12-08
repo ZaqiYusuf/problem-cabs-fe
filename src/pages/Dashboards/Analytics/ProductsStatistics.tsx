@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ProductsStatisticsData } from "Common/data";
 import { CheckCircle2, Search, XCircle } from "lucide-react";
 import filterDataBySearch from "Common/filterDataBySearch";
+import * as XLSX from "xlsx"; // Import XLSX untuk ekspor Excel
 
 import { getPayments } from "helpers/backend_helper";
 
@@ -45,8 +46,9 @@ const ProductsStatistics = () => {
   
       if (Array.isArray(response.payment)) {
         // Map data dari API ke dalam format yang diinginkan
-        const mappedProcess = response.payment.map((item: any) => ({
-        id: item.id,
+        const mappedProcess = response.payment.map((item: any, index: number) => ({
+          No: index + 1 + ".", // Menambahkan nomor urut
+          id: item.id,
           user_id: item.user_id,
           id_customer: item.id_customer,
           id_imk: item.id_imk,
@@ -81,6 +83,7 @@ const ProductsStatistics = () => {
     }
   };
   
+  
   // Memuat data pertama kali
   useEffect(() => {
     getCustomer();
@@ -102,122 +105,117 @@ const ProductsStatistics = () => {
     [processes]
   );
 
+  
+  const exportColumns = useMemo(
+    () => [
+      { header: "No", accessorKey: "No" },
+      { header: "IMK ID", accessorKey: "id_imk" },
+      { header: "Customer Name", accessorKey: "customer_name" },
+      { header: "User Email", accessorKey: "user_email" },
+      { header: "Payment Method", accessorKey: "pay_method" },
+      { header: "Payment Date", accessorKey: "pay_date" },
+      { header: "Amount Paid", accessorKey: "amount_pay" },
+      { header: "Payment Status", accessorKey: "status_pay" },
+      { header: "Order ID", accessorKey: "order_id" },
+      { header: "Created At", accessorKey: "created_at" },
+      { header: "Updated At", accessorKey: "updated_at" },
+    ],
+    []
+  );
+  
+  const exportToExcel = () => {
+    const exportData = filteredProcesses.map((item) =>
+      exportColumns.reduce((acc, col) => {
+        const accessor = col.accessorKey as keyof FormValues;
+        acc[col.header] = item[accessor];
+        return acc;
+      }, {} as Record<string, any>)
+    );
+  
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Payments");
+  
+    XLSX.writeFile(workbook, "PaymentsData.xlsx");
+  };
+  
 
 
-const columns = useMemo(
-  () => [
-    {
-      header: () => (
-        <div className="flex items-center h-full">
-          <input
-            id="productsCheck1"
-            className="size-4 cursor-pointer bg-white border border-slate-200 checked:bg-none dark:bg-zink-700 dark:border-zink-500 rounded-sm appearance-none arrow-none relative after:absolute after:content-['\eb7b'] after:top-0 after:left-0 after:font-remix after:leading-none after:opacity-0 checked:after:opacity-100 after:text-custom-500 checked:border-custom-500 dark:after:text-custom-500 dark:checked:border-custom-800"
-            type="checkbox"
-          />
-        </div>
-      ),
-      accessorKey: "id",
-      enableColumnFilter: false,
-      enableSorting: true,
-      cell: (cell: any) => (
-        <>
-          <div className="flex items-center h-full">
-            <input
-              id="productsCheck1"
-              className="size-4 cursor-pointer bg-white border border-slate-200 checked:bg-none dark:bg-zink-700 dark:border-zink-500 rounded-sm appearance-none arrow-none relative after:absolute after:content-['\eb7b'] after:top-0 after:left-0 after:font-remix after:leading-none after:opacity-0 checked:after:opacity-100 after:text-custom-500 checked:border-custom-500 dark:after:text-custom-500 dark:checked:border-custom-800"
-              type="checkbox"
-            />
-          </div>
-        </>
-      ),
-    },
-    {
-      header: "IMK ID",
-      accessorKey: "id_imk",
-      enableColumnFilter: false,
-      enableSorting: true,
-    },
-    {
-      header: "Customer Name",
-      accessorKey: "customer_name",
-      enableColumnFilter: false,
-      enableSorting: true,
-    },
-    {
-      header: "User Email",
-      accessorKey: "user_email",
-      enableColumnFilter: false,
-      enableSorting: true,
-    },
-    {
-      header: "Payment Method",
-      accessorKey: "pay_method",
-      enableColumnFilter: false,
-      enableSorting: true,
-    },
-    {
-      header: "Payment Date",
-      accessorKey: "pay_date",
-      enableColumnFilter: false,
-      enableSorting: true,
-    },
-    {
-      header: "Amount Paid",
-      accessorKey: "amount_pay",
-      enableColumnFilter: false,
-      enableSorting: true,
-    },
-    {
-      header: "Payment Status",
-      accessorKey: "status_pay",
-      enableColumnFilter: false,
-      enableSorting: true,
-      cell: (cell: any) => {
-        const status = cell.row.original.status_pay;
-        return (
-          <>
-            {status === "paid" ? (
-              <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded border bg-green-500 border-transparent text-green-50 dark:bg-green-500/20 dark:border-transparent">
-                <CheckCircle2 className="size-3 ltr:mr-1 rtl:ml-1" />
-                Paid
-              </span>
-            ) : status === "pending" ? (
-              <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded border bg-yellow-500 border-transparent text-yellow-50 dark:bg-yellow-500/20 dark:border-transparent">
-                <XCircle className="size-3 ltr:mr-1 rtl:ml-1" />
-                Pending
-              </span>
-            ) : (
-              <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded border bg-red-500 border-transparent text-red-50 dark:bg-red-500/20 dark:border-transparent">
-                <XCircle className="size-3 ltr:mr-1 rtl:ml-1" />
-                Expired
-              </span>
-            )}
-          </>
-        );
+
+
+  const columns = useMemo(
+    () => [
+      {
+        header: "No",
+        accessorKey: "No",
+        enableColumnFilter: false,
+        enableSorting: false,
+        cell: (cell: any) => cell.row.original.No, // Menampilkan nomor urut
       },
-    },
-    {
-      header: "Order ID",
-      accessorKey: "order_id",
-      enableColumnFilter: false,
-      enableSorting: true,
-    },
-    {
-      header: "Created At",
-      accessorKey: "created_at",
-      enableColumnFilter: false,
-      enableSorting: true,
-    },
-    {
-      header: "Updated At",
-      accessorKey: "updated_at",
-      enableColumnFilter: false,
-      enableSorting: true,
-    },
-  ],
-  []
-);
-
+      {
+        header: "IMK ID",
+        accessorKey: "id_imk",
+        enableColumnFilter: false,
+        enableSorting: true,
+      },
+      {
+        header: "Customer Name",
+        accessorKey: "customer_name",
+        enableColumnFilter: false,
+        enableSorting: true,
+      },
+      {
+        header: "User Email",
+        accessorKey: "user_email",
+        enableColumnFilter: false,
+        enableSorting: true,
+      },
+      {
+        header: "Payment Method",
+        accessorKey: "pay_method",
+        enableColumnFilter: false,
+        enableSorting: true,
+      },
+      {
+        header: "Payment Date",
+        accessorKey: "pay_date",
+        enableColumnFilter: false,
+        enableSorting: true,
+      },
+      {
+        header: "Amount Paid",
+        accessorKey: "amount_pay",
+        enableColumnFilter: false,
+        enableSorting: true,
+      },
+      {
+        header: "Payment Status",
+        accessorKey: "status_pay",
+        enableColumnFilter: false,
+        enableSorting: true,
+      },
+      {
+        header: "Order ID",
+        accessorKey: "order_id",
+        enableColumnFilter: false,
+        enableSorting: true,
+      },
+      {
+        header: "Created At",
+        accessorKey: "created_at",
+        enableColumnFilter: false,
+        enableSorting: true,
+      },
+      {
+        header: "Updated At",
+        accessorKey: "updated_at",
+        enableColumnFilter: false,
+        enableSorting: true,
+      },
+    ],
+    []
+  );
+  
 
 
 
@@ -243,11 +241,12 @@ const columns = useMemo(
                 </div>
                 <button
                   type="button"
-                  className="bg-white border-dashed text-custom-500 btn border-custom-500 hover:text-custom-500 hover:bg-custom-50 hover:border-custom-600 focus:text-custom-600 focus:bg-custom-50 focus:border-custom-600 active:text-custom-600 active:bg-custom-50 active:border-custom-600 dark:bg-zink-700 dark:ring-custom-400/20 dark:hover:bg-custom-800/20 dark:focus:bg-custom-800/20 dark:active:bg-custom-800/20"
+                  onClick={exportToExcel} // Tambahkan event ekspor Excel
+                  className="bg-white border-dashed text-custom-500 btn border-custom-500"
                 >
-                  <i className="align-baseline ltr:pr-1 rtl:pl-1 ri-download-2-line"></i>{" "}
-                  Export
+                  Export to Excel
                 </button>
+
               </div>
             </div>
           </div>
@@ -260,9 +259,9 @@ const columns = useMemo(
                   customPageSize={10}
                   divclassName="-mx-5 -mb-5 overflow-x-auto"
                   tableclassName="w-full whitespace-nowrap"
-                  theadclassName="text-left bg-slate-100 dark:bg-zink-600"
-                  thclassName="px-6 py-2.5 font-semibold"
-                  tdclassName="px-3.5 py-2.5 border-y border-slate-200 dark:border-zink-500"
+                  theadclassName="bg-slate-100 text-left" // Pastikan gaya konsisten
+                  thclassName="px-4 py-2.5"
+                  tdclassName="px-4 py-2.5 border-y border-slate-200"
                   PaginationClassName="flex flex-col items-center mt-8 md:flex-row"
                 />
               ) : (

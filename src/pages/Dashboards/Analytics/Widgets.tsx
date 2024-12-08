@@ -58,7 +58,7 @@ const Widgets = () => {
     try {
       const response = await getPayments(); // Panggil API
       const data: any = response;
-      console.log(data);
+      console.log(data, 'imk');
       setPaid(data.paid_payment); // Set state untuk "entry_active"
       setPending(data.pending_payment); // Set state untuk "entry_active"
     } catch (error) {
@@ -176,7 +176,7 @@ const Widgets = () => {
               className="counter-value text-[24px] text-white"
             />
           </h5>
-          <p className="text-white dark:text-slate-200 text-[18px]">Paid</p>
+          <p className="text-white dark:text-slate-200 text-[18px]">Payment Paid</p>
         </div>
       </div>
       <div className="order-4 md:col-span-6 lg:col-span-3 col-span-12 2xl:order-1 bg-yellow-500 dark:bg-purple-600/20 card 2xl:col-span-2 group-data-[skin=bordered]:border-purple-500/20 relative overflow-hidden">

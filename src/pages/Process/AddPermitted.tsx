@@ -5,6 +5,9 @@ import React, { useState, useEffect } from "react";
 import Select from "react-select";
 
 
+import { getLocationAPI, getPackageAPI } from "helpers/backend_helper";
+
+
 
 
 // Definisi Tipe Props dan Data
@@ -25,6 +28,28 @@ interface Vehicle {
 }
 
 
+interface Location {
+  id: number;
+  location: string;
+  created_at: string;
+  updated_at: string;
+}
+
+
+
+interface Package {
+  id: number,
+  item: string,
+  periode: string,
+  periodeType: string,
+  type: string,
+  price: number,
+  detail: string,
+}
+
+
+
+
 // Props Type
 interface AddPermittedProps {
   formData: any; // Struktur data formData Anda
@@ -35,30 +60,68 @@ const AddPermitted: React.FC<AddPermittedProps> = ({ formData, setFormData }) =>
   const [isOpenVehicleModal, setIsOpenVehicleModal] = useState(false);
   const [isOpenPackageModal, setIsOpenPackageModal] = useState(false);
 
+  const [location, setLocation] = useState<Location[]>([]); 
+  const [packages, setPackage] = useState<Package[]>([]); 
+
+
+  
+  const getLocation = async () => {
+    try {
+      const response: any = await getLocationAPI();
+      if (response.success && response.locations) {
+        setLocation(response.locations); 
+      } else {
+        console.error("Gagal mendapatkan data location:", response);
+      }
+    } catch (error) {
+      console.error("Error saat memuat location:", error);
+    }
+  };
+
+  
+  const getPackage = async () => {
+    try {
+      const response: any = await getPackageAPI();
+      if (response.success && response.packages) {
+        setPackage(response.packages); 
+      } else {
+        console.error("Gagal mendapatkan data packages:", response);
+      }
+    } catch (error) {
+      console.error("Error saat memuat packages:", error);
+    }
+  };
 
   useEffect(() => {
+    getLocation();
+    getPackage();
+  }, []); // Hanya sekali saat komponen mount
+  
+  useEffect(() => {
     if (formData.vehicles.length === 0) {
+      const updatedVehicles = [
+        {
+          id: 1,
+          package_id: null,
+          cargo: "",
+          origin: "",
+          location_id: "",
+          start_date: "",
+          expired_at: "",
+          plate_number: "",
+          no_lambung: "",
+          stnk: null,
+          driver_name: "",
+          sim: null,
+        },
+      ];
       setFormData((prevData: any) => ({
         ...prevData,
-        vehicles: [
-          {
-            id: 1,
-            package_id: null,
-            cargo: "",
-            origin: "",
-            location_id: "",
-            start_date: "",
-            expired_at: "",
-            plate_number: "",
-            no_lambung: "",
-            stnk: null,
-            driver_name: "",
-            sim: null,
-          },
-        ],
+        vehicles: updatedVehicles,
       }));
     }
-  }, [formData, setFormData]);
+  }, [formData.vehicles.length, setFormData]);
+  
 
   // Fungsi untuk menambahkan kendaraan
   const addVehicle = () => {
@@ -116,17 +179,13 @@ const AddPermitted: React.FC<AddPermittedProps> = ({ formData, setFormData }) =>
 
   // Handler untuk mengupdate data kendaraan
 
-  // Opsi paket dan lokasi kerja
-  const packageOptions = [
-    { label: "Non Tenant Light Vehicle (Non Niaga) Accidental", value: 1 },
-    { label: "Non Tenant Light Vehicle (Niaga) 6 Bulan", value: 2 },
-    { label: "Tenant Medium Vehicle 12 Bulan", value: 3 },
-  ];
+  // // Opsi paket dan lokasi kerja
+  // const packageOptions = [
+  //   { label: "Non Tenant Light Vehicle (Non Niaga) Accidental", value: 1 },
+  //   { label: "Non Tenant Light Vehicle (Niaga) 6 Bulan", value: 2 },
+  //   { label: "Tenant Medium Vehicle 12 Bulan", value: 3 },
+  // ];
 
-  const workingLocationOptions = [
-    { label: "Tj Harapan", value: "1" },
-    { label: "Tursina", value: "2" },
-  ];
 
   return (
     <React.Fragment>
@@ -145,19 +204,20 @@ const AddPermitted: React.FC<AddPermittedProps> = ({ formData, setFormData }) =>
           >
             <div className="grid grid-cols-3 gap-4">
               {/* Pilih Paket */}
-              <div className="w-full">
-                <label htmlFor={`package-${vehicle.id}`} className="block text-gray-700 mb-3">
-                  Paket
-                </label>
-                <Select
-                  id={`package-${vehicle.id}`}
-                  options={packageOptions}
-                  className="border-slate-200 dark:border-zink-500 focus:outline-none focus:border-custom-500 rounded-md"
-                  placeholder="Pilih Paket"
-                  onChange={(selectedOption) =>
-                    handleVehicleChange(vehicle.id, "package_id", selectedOption?.value)
-                  }
-                />
+              <div>
+                <label className="block mb-2 text-gray-700">Paket</label>
+                <select
+                  className="w-full px-4 py-2 border rounded-md"
+                  onChange={(e) => handleVehicleChange(vehicle.id, "package_id", e.target.value)}
+                  value={vehicle.location_id || ""}
+                >
+                  <option value="">Select Paket</option>
+                  {packages.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {`${t.item} - ${t.type}  (${t.periode})`}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Cargo */}
@@ -193,19 +253,20 @@ const AddPermitted: React.FC<AddPermittedProps> = ({ formData, setFormData }) =>
 
             <div className="grid grid-cols-3 gap-4 mt-4">
               {/* Lokasi Kerja */}
-              <div className="w-full">
-                <label htmlFor={`location_id-${vehicle.id}`} className="block text-gray-700 mb-3">
-                  Lokasi Kerja
-                </label>
-                <Select
-                  id={`location_id-${vehicle.id}`}
-                  options={workingLocationOptions}
-                  className="border-slate-200 dark:border-zink-500 focus:outline-none focus:border-custom-500 rounded-md"
-                  placeholder="Pilih Lokasi Kerja"
-                  onChange={(selectedOption) =>
-                    handleVehicleChange(vehicle.id, "location_id", selectedOption?.value)
-                  }
-                />
+              <div>
+                <label className="block mb-2 text-gray-700">Lokasi Kerja</label>
+                <select
+                  className="w-full px-4 py-2 border rounded-md"
+                  onChange={(e) => handleVehicleChange(vehicle.id, "location_id", e.target.value)}
+                  value={vehicle.location_id || ""}
+                >
+                  <option value="">Select Location</option>
+                  {location.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.location}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="w-full">
