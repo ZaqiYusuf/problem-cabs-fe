@@ -250,6 +250,7 @@ const authProtectedRoutes: Array<RouteObject> = [
   // { path: "/dashboards-social", component: SocialMediaDashboard , roles: ["admin", "user"]},
   
   
+  
   // DATA MASTER
   { path: "/dashboards-tenant", component: Tenant , roles: ["admin", "user"]},
   // { path: "/dashboards-periode", component: Periode , roles: ["admin", "user"]},
