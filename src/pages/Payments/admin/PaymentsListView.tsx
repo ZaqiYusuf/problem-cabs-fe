@@ -422,10 +422,10 @@ const PaymentsListView = () => {
       // pay_date: Yup.date().required("Please select a payment date"),
       amount_pay: Yup.string().required("Please enter the payment amount"),
       status_pay: Yup.mixed<
-        "capture" | "pending" | "cancel" | "expire" | "refund" | "failure"
+        "capture" | "pending" | "cancel" | "expire" | "refund" | "failure" | "paid"
       >()
         .oneOf(
-          ["capture", "pending", "cancel", "expire", "refund", "failure"],
+          ["capture", "pending", "cancel", "expire", "refund", "failure", "paid"],
           "Invalid payment status"
         )
         .required("Please select a payment status"),
@@ -471,12 +471,12 @@ const PaymentsListView = () => {
         );
         await updateDataPayment(updatedPayment);
         toast.success("Payment berhasil diperbarui!");
-      } else {
+      } else if(!isEdit){
         // Add new payment
         const newPayment: Payment = {
           id: payments.length ? Math.max(...payments.map((p) => p.id)) + 1 : 1,
           id_imk: values.id_imk,
-          pay_date: values.pay_date,
+          pay_date: new Date().toISOString(),
           amount_pay: values.amount_pay,
           status_pay: values.status_pay,
           name_pay: values.name_pay,
@@ -492,6 +492,8 @@ const PaymentsListView = () => {
         setFilteredPayments((prevFiltered) => [...prevFiltered, newPayment]);
         await PostDataPayment(newPayment)
         toast.success("Payment berhasil ditambahkan!");
+      }else{
+        console.log("Payment gagal");
       }
       toggle();
     },

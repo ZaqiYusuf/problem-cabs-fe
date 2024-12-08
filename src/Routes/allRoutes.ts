@@ -12,6 +12,7 @@ import Vehicle from "pages/Dashboards/Vehicle/VehiclesListView";
 import Categories from "pages/Dashboards/Categories/CategoryListView";
 import Item from "pages/Dashboards/Item/ItemListView";
 import Package from "pages/Dashboards/Packages/PackagesListView";
+import RegisterAkun from "pages/Authentication/Register"
 
 //users management
 import Users from "pages/Users/UsersListView";
@@ -20,7 +21,8 @@ import Users from "pages/Users/UsersListView";
 import Customer from "pages/Customer/CustomersListView";
 
 //payment management
-import Payment from "pages/Payments/PaymentsListView";
+import Payment from "pages/Payments/admin/PaymentsListView";
+import PaymentUser from "pages/Payments/user/paymentListView";
 
 //process management
 import Process from "pages/Process/Index";
@@ -210,7 +212,7 @@ import CreatePasswordBoxed from "pages/AuthenticationInner/CreatePassword/Create
 import Login from "pages/Authentication/Login";
 import Logout from "pages/Authentication/LogOut";
 import Pages404 from "pages/AuthenticationInner/Pages404";
-import Register from "pages/Authentication/Register";
+import Register from "pages/Register/Register";
 import UserProfile from "pages/Authentication/UserProfile";
 import Account from "pages/Pages/Account";
 import ComingSoon from "pages/AuthenticationInner/ComingSoon";
@@ -228,195 +230,249 @@ import Form from "pages/Process/Form";
 
 interface RouteObject {
   path: string;
-  component: React.ComponentType<any>; // Use React.ComponentType to specify the type of the component
-  exact?: boolean;
+  component: React.ComponentType<any>;
+  roles: string[]; 
 }
 
 const authProtectedRoutes: Array<RouteObject> = [
-  // Dashboard
-  { path: "/", component: Analytics },
-  { path: "/dashboard", component: Analytics },
-  { path: "/dashboards-analytics", component: Analytics },
-  { path: "/dashboards-email", component: Email },
-  { path: "/dashboards-hr", component: HRDashboard },
-  { path: "/dashboards-social", component: SocialMediaDashboard },
-  { path: "/dashboards-tenant", component: Tenant },
-  { path: "/dashboards-periode", component: Periode },
-  { path: "/dashboards-location", component: Location },
-  { path: "/dashboards-driver", component: Driver },
-  { path: "/dashboards-vehicle", component: Vehicle },
-  {path: "/dashboards-categories", component: Categories},
-  { path: "/dashboards-item", component: Item },
-  { path: "/dashboards-package", component: Package },
 
-  //Users Management
-  {path: "/users-management", component: Users},
 
-  //Customers Management
-  {path: "/customers-management", component:Customer},
+  // { path: "/register", component:  Register, roles: ["admin", "user"]},
 
-  //payment
-  { path: "/payments-management", component: Payment },
 
+  // Dashboard 
+  { path: "/", component: Analytics, roles: ["admin"]},
+  { path: "/dashboard", component: Analytics , roles: ["admin"]},
+  { path: "/dashboards-analytics", component: Analytics , roles: ["admin"]},
+  
+  // { path: "/dashboards-email", component: Email , roles: ["admin", "user"]},
+  // { path: "/dashboards-hr", component: HRDashboard , roles: ["admin", "user"]},
+  // { path: "/dashboards-social", component: SocialMediaDashboard , roles: ["admin", "user"]},
+  
+  
+  // DATA MASTER
+  { path: "/dashboards-tenant", component: Tenant , roles: ["admin", "user"]},
+  // { path: "/dashboards-periode", component: Periode , roles: ["admin", "user"]},
+  { path: "/dashboards-location", component: Location , roles: ["admin", "user"]},
+  { path: "/dashboards-package", component: Package , roles: ["admin", "user"]},
+  
+  
+  // AREA ENTRY PERMITS
+  { path: "/process-management", component: Process , roles: ["admin" ,"user"]},
+  { path: "/customers-management", component:Customer, roles: ["admin" ,"user"]},
+  { path: "/permitted-vehicle", component: Permitted , roles: ["admin" ,"user"]},
+  { path: "/permitted-personnel", component: PermittedPersonnel , roles: ["admin" ,"user"]},  
   //process
-  { path: "/process-management", component: Process },
-  { path: "/permitted-vehicle", component: Permitted },
-  { path: "/process-form", component: Form },
-  { path: "/permitted-personnel", component: PermittedPersonnel },
+  { path: "/process-form", component: Form , roles: ["admin"]},
 
-  //setting payment
-  { path: "/setting-payment", component: SettingPayment },
+
+
+
+  // PAYMENT HISTORIES (ADMIN)
+  { path: "/payments-management", component: Payment , roles: ["admin", "user"]},
+
+
+  // PAYMENT HISTORIES (USER)
+  { path: "/payments-management-user", component: PaymentUser , roles: ["user"]},
+
+
+  
+  // USERS 
+  {path: "/users-management", component: Users, roles: ["admin" ,"user"]},
+
+
+  // SETTINGS
+  { path: "/setting-payment", component: SettingPayment , roles: ["admin" ,"user"]},
+
+
+
+  // PROFILEE
+  { path: "/user-profile", component: UserProfile, roles: ["admin" ,"user"] },
+
+
+
+
+
+
+  //  {{ KE BAWAH INI LIAT KONDISIIII }}
+
+
   
 
-  // Ui Element
-  { path: "/ui-alerts", component: UiAlert },
-  { path: "/ui-avatar", component: UiAvatar },
-  { path: "/ui-buttons", component: UiButtons },
-  { path: "/ui-label", component: UiLabel },
-  { path: "/ui-cards", component: UiCards },
-  { path: "/ui-collapse", component: UiCollapse },
-  { path: "/ui-countdown", component: UiCountdown },
-  { path: "/ui-drawer", component: UIDrawer },
-  { path: "/ui-dropdown", component: UiDropdown },
-  { path: "/ui-gallery", component: UiGallery },
-  { path: "/ui-lists", component: UiLists },
-  { path: "/ui-notification", component: UiNotification },
-  { path: "/ui-modal", component: UiModal },
-  { path: "/ui-spinners", component: UiSpinners },
-  { path: "/ui-timeline", component: UITimeline },
-  { path: "/ui-progress-bar", component: UiProgressBar },
-  { path: "/ui-tooltip", component: UITooltip },
-  { path: "/ui-video", component: UiVideo },
-
-  // plugins
-  { path: "/plugins-simplebar", component: PSimpleBar },
-  { path: "/plugins-lightbox", component: PLightBox },
-  { path: "/plugins-swiper-slider", component: SwiperSlider },
-  { path: "/plugins-scroll-hint", component: ScrollHint },
-  { path: "/plugins-video-player", component: VideoPlayer },
-
-  // navigation
-  { path: "/navigation-navbars", component: NavBars },
-  { path: "/navigation-tabs", component: NavTabs },
-  { path: "/navigation-breadcrumb", component: NavigationBreadcrumb },
-  { path: "/navigation-pagination", component: Pagination },
-
-  // Forms
-  { path: "/forms-basic", component: FormsBasic },
-  { path: "/forms-validation", component: FormValidation },
-  { path: "/forms-input-mask", component: InputMask },
-  { path: "/forms-select", component: FormSelect },
-  { path: "/forms-checkbox-radio", component: CheckboxRadio },
-  { path: "/forms-switches", component: FormSwitches },
-  { path: "/forms-wizard", component: FormWizard },
-  { path: "/forms-file-upload", component: FileUpload },
-  { path: "/forms-datepicker", component: FormDatePicker },
-  { path: "/forms-timepicker", component: FormTimePicker },
-  { path: "/forms-colorpicker", component: FormColorPicker },
-  { path: "/forms-multi-select", component: FormMultiSelect },
-  { path: "/forms-input-spin", component: FormInputSpin },
-  { path: "/forms-clipboard", component: FormClipboard },
-  { path: "/forms-editor-classic", component: EditorClassic },
-
-  // Table
-  { path: "/tables-basic", component: BasicTable },
-  { path: "/tables-datatable", component: ReactDataTable },
-
-  // Icons
-  { path: "/icons-remix", component: RemixIcon },
-  { path: "/icons-lucide", component: LucidIcon },
-
-  // Map
-  { path: "/maps-google", component: MapsGoogle },
-  { path: "/maps-leaflet", component: MapsLeaflet },
 
 
-  //Charts
-  { path: "/charts-apex-area", component: AreaCharts },
-  { path: "/charts-apex-bar", component: BarCharts },
-  { path: "/charts-apex-boxplot", component: BoxplotCharts },
-  { path: "/charts-apex-bubble", component: BubbleCharts },
-  { path: "/charts-apex-candlstick", component: CandlstickCharts },
-  { path: "/charts-apex-column", component: ColumnCharts },
-  { path: "/charts-apex-funnel", component: FunnelCharts },
-  { path: "/charts-apex-heatmap", component: HeatmapChart },
-  { path: "/charts-apex-line", component: LineChart },
-  { path: "/charts-apex-mixed", component: MixedChart },
-  { path: "/charts-apex-pie", component: PieChart },
-  { path: "/charts-apex-polar", component: PolarAreaChart },
-  { path: "/charts-apex-radar", component: RadarChart },
-  { path: "/charts-apex-radialbar", component: RadialbarChart },
-  { path: "/charts-apex-range-area", component: RangeAreaChart },
-  { path: "/charts-apex-scatter", component: Scatterchart },
-  { path: "/charts-apex-timeline", component: TimeLinechart },
-  { path: "/charts-apex-treemap", component: Treemapchart },
 
-  // Chat
-  { path: "/apps-chat", component: Chat },
+  { path: "/dashboards-driver", component: Driver , roles: ["admin", "user"]},
+  { path: "/dashboards-vehicle", component: Vehicle , roles: ["admin", "user"]},
+  {path: "/dashboards-categories", component: Categories, roles: ["user"]},
+  { path: "/dashboards-item", component: Item , roles: ["user"]},
 
-  // Mailbox
-  { path: "/apps-mailbox", component: Mailbox },
+  //Users Management
 
-  // Calendar
-  { path: "/apps-calendar", component: DefaultCalendar },
-  { path: "/apps-calendar-month-grid", component: MonthGrid },
-  { path: "/apps-calendar-multi-month-stack", component: MultiMonthStack },
+  //Customers Management
 
-  // Ecommerce
-  { path: "/apps-ecommerce-product-list", component: ListView },
-  { path: "/apps-ecommerce-product-grid", component: GridView },
-  { path: "/apps-ecommerce-product-overview", component: Overview },
-  { path: "/apps-ecommerce-product-create", component: AddNew },
-  { path: "/apps-ecommerce-cart", component: ShoppingCart },
-  { path: "/apps-ecommerce-checkout", component: Checkout },
-  { path: "/apps-ecommerce-orders", component: Orders },
-  { path: "/apps-ecommerce-order-overview", component: OrderOverview },
-  { path: "/apps-ecommerce-sellers", component: Sellers },
+  //payment
 
-  // HR Management
-  { path: "/apps-hr-employee", component: EmployeeList },
-  { path: "/apps-hr-holidays", component: Holidays },
-  { path: "/apps-hr-leave-employee", component: LeaveManageEmployee },
-  { path: "/apps-hr-create-leave-employee", component: AddLeaveEmployee },
-  { path: "/apps-hr-leave", component: LeaveManageHR },
-  { path: "/apps-hr-create-leave", component: AddLeaveHR },
-  { path: "/apps-hr-attendance", component: AttendanceHR },
-  { path: "/apps-hr-attendance-main", component: MainAttendance },
-  { path: "/apps-hr-department", component: Departments },
-  { path: "/apps-hr-sales-estimates", component: Estimates },
-  { path: "/apps-hr-sales-payments", component: Payments },
-  { path: "/apps-hr-sales-expenses", component: Expenses },
-  { path: "/apps-hr-payroll-employee-salary", component: EmployeeSalary },
-  { path: "/apps-hr-payroll-payslip", component: Payslip },
-  { path: "/apps-hr-payroll-create-payslip", component: CreatePayslip },
 
-  // Notes
-  { path: "/apps-notes", component: Notes },
+  //setting payment
+  
 
-  // Social Media
-  { path: "/apps-social-friends", component: Friends },
-  { path: "/apps-social-event", component: Event },
-  { path: "/apps-social-video", component: WatchVideo },
-  { path: "/apps-social-marketplace", component: Marketplace },
 
-  // Invoices
-  { path: "/apps-invoice-list", component: InvoiceListView },
-  { path: "/apps-invoice-add-new", component: InvoiceAddNew },
-  { path: "/apps-invoice-overview", component: InvoiceOverview },
 
-  // Users
-  { path: "/apps-users-list", component: UserListView },
-  { path: "/apps-users-grid", component: UserGridView },
 
-  // pages
-  { path: "/pages-account", component: Account },
-  { path: "/pages-account-settings", component: Settings },
-  { path: "/pages-pricing", component: Pricing },
-  { path: "/pages-faqs", component: Faqs },
-  { path: "/pages-contact-us", component: ContactUs },
 
-  // profile
-  { path: "/user-profile", component: UserProfile },
+
+
+
+
+  // // Ui Element
+  // { path: "/ui-alerts", component: UiAlert },
+  // { path: "/ui-avatar", component: UiAvatar },
+  // { path: "/ui-buttons", component: UiButtons },
+  // { path: "/ui-label", component: UiLabel },
+  // { path: "/ui-cards", component: UiCards },
+  // { path: "/ui-collapse", component: UiCollapse },
+  // { path: "/ui-countdown", component: UiCountdown },
+  // { path: "/ui-drawer", component: UIDrawer },
+  // { path: "/ui-dropdown", component: UiDropdown },
+  // { path: "/ui-gallery", component: UiGallery },
+  // { path: "/ui-lists", component: UiLists },
+  // { path: "/ui-notification", component: UiNotification },
+  // { path: "/ui-modal", component: UiModal },
+  // { path: "/ui-spinners", component: UiSpinners },
+  // { path: "/ui-timeline", component: UITimeline },
+  // { path: "/ui-progress-bar", component: UiProgressBar },
+  // { path: "/ui-tooltip", component: UITooltip },
+  // { path: "/ui-video", component: UiVideo },
+
+  // // plugins
+  // { path: "/plugins-simplebar", component: PSimpleBar },
+  // { path: "/plugins-lightbox", component: PLightBox },
+  // { path: "/plugins-swiper-slider", component: SwiperSlider },
+  // { path: "/plugins-scroll-hint", component: ScrollHint },
+  // { path: "/plugins-video-player", component: VideoPlayer },
+
+  // // navigation
+  // { path: "/navigation-navbars", component: NavBars },
+  // { path: "/navigation-tabs", component: NavTabs },
+  // { path: "/navigation-breadcrumb", component: NavigationBreadcrumb },
+  // { path: "/navigation-pagination", component: Pagination },
+
+  // // Forms
+  // { path: "/forms-basic", component: FormsBasic },
+  // { path: "/forms-validation", component: FormValidation },
+  // { path: "/forms-input-mask", component: InputMask },
+  // { path: "/forms-select", component: FormSelect },
+  // { path: "/forms-checkbox-radio", component: CheckboxRadio },
+  // { path: "/forms-switches", component: FormSwitches },
+  // { path: "/forms-wizard", component: FormWizard },
+  // { path: "/forms-file-upload", component: FileUpload },
+  // { path: "/forms-datepicker", component: FormDatePicker },
+  // { path: "/forms-timepicker", component: FormTimePicker },
+  // { path: "/forms-colorpicker", component: FormColorPicker },
+  // { path: "/forms-multi-select", component: FormMultiSelect },
+  // { path: "/forms-input-spin", component: FormInputSpin },
+  // { path: "/forms-clipboard", component: FormClipboard },
+  // { path: "/forms-editor-classic", component: EditorClassic },
+
+  // // Table
+  // { path: "/tables-basic", component: BasicTable },
+  // { path: "/tables-datatable", component: ReactDataTable },
+
+  // // Icons
+  // { path: "/icons-remix", component: RemixIcon },
+  // { path: "/icons-lucide", component: LucidIcon },
+
+  // // Map
+  // { path: "/maps-google", component: MapsGoogle },
+  // { path: "/maps-leaflet", component: MapsLeaflet },
+
+
+  // //Charts
+  // { path: "/charts-apex-area", component: AreaCharts },
+  // { path: "/charts-apex-bar", component: BarCharts },
+  // { path: "/charts-apex-boxplot", component: BoxplotCharts },
+  // { path: "/charts-apex-bubble", component: BubbleCharts },
+  // { path: "/charts-apex-candlstick", component: CandlstickCharts },
+  // { path: "/charts-apex-column", component: ColumnCharts },
+  // { path: "/charts-apex-funnel", component: FunnelCharts },
+  // { path: "/charts-apex-heatmap", component: HeatmapChart },
+  // { path: "/charts-apex-line", component: LineChart },
+  // { path: "/charts-apex-mixed", component: MixedChart },
+  // { path: "/charts-apex-pie", component: PieChart },
+  // { path: "/charts-apex-polar", component: PolarAreaChart },
+  // { path: "/charts-apex-radar", component: RadarChart },
+  // { path: "/charts-apex-radialbar", component: RadialbarChart },
+  // { path: "/charts-apex-range-area", component: RangeAreaChart },
+  // { path: "/charts-apex-scatter", component: Scatterchart },
+  // { path: "/charts-apex-timeline", component: TimeLinechart },
+  // { path: "/charts-apex-treemap", component: Treemapchart },
+
+  // // Chat
+  // { path: "/apps-chat", component: Chat },
+
+  // // Mailbox
+  // { path: "/apps-mailbox", component: Mailbox },
+
+  // // Calendar
+  // { path: "/apps-calendar", component: DefaultCalendar },
+  // { path: "/apps-calendar-month-grid", component: MonthGrid },
+  // { path: "/apps-calendar-multi-month-stack", component: MultiMonthStack },
+
+  // // Ecommerce
+  // { path: "/apps-ecommerce-product-list", component: ListView },
+  // { path: "/apps-ecommerce-product-grid", component: GridView },
+  // { path: "/apps-ecommerce-product-overview", component: Overview },
+  // { path: "/apps-ecommerce-product-create", component: AddNew },
+  // { path: "/apps-ecommerce-cart", component: ShoppingCart },
+  // { path: "/apps-ecommerce-checkout", component: Checkout },
+  // { path: "/apps-ecommerce-orders", component: Orders },
+  // { path: "/apps-ecommerce-order-overview", component: OrderOverview },
+  // { path: "/apps-ecommerce-sellers", component: Sellers },
+
+  // // HR Management
+  // { path: "/apps-hr-employee", component: EmployeeList },
+  // { path: "/apps-hr-holidays", component: Holidays },
+  // { path: "/apps-hr-leave-employee", component: LeaveManageEmployee },
+  // { path: "/apps-hr-create-leave-employee", component: AddLeaveEmployee },
+  // { path: "/apps-hr-leave", component: LeaveManageHR },
+  // { path: "/apps-hr-create-leave", component: AddLeaveHR },
+  // { path: "/apps-hr-attendance", component: AttendanceHR },
+  // { path: "/apps-hr-attendance-main", component: MainAttendance },
+  // { path: "/apps-hr-department", component: Departments },
+  // { path: "/apps-hr-sales-estimates", component: Estimates },
+  // { path: "/apps-hr-sales-payments", component: Payments },
+  // { path: "/apps-hr-sales-expenses", component: Expenses },
+  // { path: "/apps-hr-payroll-employee-salary", component: EmployeeSalary },
+  // { path: "/apps-hr-payroll-payslip", component: Payslip },
+  // { path: "/apps-hr-payroll-create-payslip", component: CreatePayslip },
+
+  // // Notes
+  // { path: "/apps-notes", component: Notes },
+
+  // // Social Media
+  // { path: "/apps-social-friends", component: Friends },
+  // { path: "/apps-social-event", component: Event },
+  // { path: "/apps-social-video", component: WatchVideo },
+  // { path: "/apps-social-marketplace", component: Marketplace },
+
+  // // Invoices
+  // { path: "/apps-invoice-list", component: InvoiceListView },
+  // { path: "/apps-invoice-add-new", component: InvoiceAddNew },
+  // { path: "/apps-invoice-overview", component: InvoiceOverview },
+
+  // // Users
+  // { path: "/apps-users-list", component: UserListView },
+  // { path: "/apps-users-grid", component: UserGridView },
+
+  // // pages
+  // { path: "/pages-account", component: Account },
+  // { path: "/pages-account-settings", component: Settings },
+  // { path: "/pages-pricing", component: Pricing },
+  // { path: "/pages-faqs", component: Faqs },
+  // { path: "/pages-contact-us", component: ContactUs },
+
+
 ];
 
 const publicRoutes = [
@@ -479,7 +535,8 @@ const publicRoutes = [
   // authentication
   { path: "/login", component: Login },
   { path: "/logout", component: Logout },
-  { path: "/register", component: Register },
+  { path: "/daftar", component: Register, roles: ["admin" ,"user"]},
+
 
 ]
 

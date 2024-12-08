@@ -24,8 +24,8 @@ const Stepper: React.FC<{ steps: Step[]; currentStep: number }> = ({
               index === 0
                 ? "bg-transparent"
                 : currentStep > step.id
-                ? "bg-blue-500"
-                : "bg-gray-300"
+                ? "bg-blue-700"
+                : "bg-gray-500"
             }`}
           ></div>
           <div

@@ -124,6 +124,18 @@ const Login = (props: any) => {
                             <div className="mt-10">
                                 <button type="submit" className="w-full text-white btn bg-custom-500 border-custom-500 hover:text-white hover:bg-custom-600 hover:border-custom-600 focus:text-white focus:bg-custom-600 focus:border-custom-600 focus:ring focus:ring-custom-100 active:text-white active:bg-custom-600 active:border-custom-600 active:ring active:ring-custom-100 dark:ring-custom-400/20">Sign In</button>
                             </div>
+
+                            <div className="mt-4 text-center">
+                                <p className="text-sm text-slate-500 dark:text-zink-200">
+                                    Don't have an account?{" "}
+                                    <Link
+                                        to="/daftar"
+                                        className="font-medium text-custom-500 hover:underline dark:text-custom-400">
+                                        Register akun
+                                    </Link>
+                                </p>
+                            </div>
+                            
                         </form>
                     </div>
                 </div>

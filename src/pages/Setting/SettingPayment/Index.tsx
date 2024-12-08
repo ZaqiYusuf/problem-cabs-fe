@@ -501,6 +501,9 @@ const PaymentGatewaySettingsView = () => {
               >
                 Server Key
               </label>
+
+
+
               <div className="relative">
                 <input
                   type={showServerKey ? "text" : "password"}
@@ -524,6 +527,8 @@ const PaymentGatewaySettingsView = () => {
                 <p className="text-red-400">{validation.errors.server_key}</p>
               ) : null}
             </div>
+
+            
 
             {/* Environment Field */}
             <div className="mb-3">
